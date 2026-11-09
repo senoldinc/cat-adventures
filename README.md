@@ -2,6 +2,10 @@
 
 Çocuklar için tarayıcıda (masaüstü + telefon) oynanan 3D platform oyunu. Three.js + Vite.
 
+▶️ **Oyna:** https://senoldinc.github.io/cat-adventures/
+
+`main` dalına her push'ta GitHub Actions oyunu derleyip GitHub Pages'e yayınlar.
+
 ```bash
 npm install
 npm run dev          # http://localhost:5173 — aynı ağdaki telefondan da açılır
