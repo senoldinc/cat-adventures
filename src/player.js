@@ -11,6 +11,7 @@ const DOUBLE_JUMP = 8.4;
 const MAX_FALL = 16;
 const CLIMB = 3.6;
 const BOUNCE = 13.5;
+const LAUNCH = 17; // tost makinesi: ~5.5 birim yükseltir
 const COYOTE = 0.1;
 const BUFFER = 0.13;
 
@@ -217,11 +218,12 @@ export class Player {
       this.glideT = 0;
       this.gliding = false;
       if (!wasGrounded) this.emit('land', fallSpeed);
-      if (this.groundBox.bouncy) {
-        v.y = BOUNCE;
+      if (this.groundBox.bouncy || this.groundBox.kind === 'launch') {
+        const launch = this.groundBox.kind === 'launch';
+        v.y = launch ? LAUNCH : BOUNCE;
         this.grounded = false;
         this.jumpCut = true;
-        this.emit('bounce');
+        this.emit(launch ? 'launch' : 'bounce');
       }
     }
 

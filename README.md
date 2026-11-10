@@ -27,9 +27,26 @@ Tırmanmak için perdeye/kitaplığın yanına doğru yürü.
 Pati fareleri ve örümceği yener; süpürgeyi sersemletir (süpürge için üstüne zıpla).
 Ekran tuşları dokunmatik cihazlarda otomatik açılır; Ayarlar → "📱 Ekran tuşları" ile Açık/Kapalı yapılabilir.
 
-## Yeni oda eklemek
-1. `src/levels/salon.json` dosyasını örnek alıp `src/levels/<oda>.json` oluştur.
-2. `src/levels/index.js` içindeki kilitli girdiyi bu JSON ile değiştir.
+## Odalar
+| Oda | Öne çıkan | Zor Parkur ödülü |
+|---|---|---|
+| 🛋️ Salon | Eğitim: tırmanma, minder, kayan tepsi | Kırmızı Pelerin |
+| 🍳 Mutfak | Kırmızı plaka → çekmeceler, tost makinesi, tencere kapağı asansörü, 3 düğme → tabak köprüsü, **boss: Kral Fare** | Aşçı Şapkası (Mama Yağmuru) |
+| 🛁 Banyo · 🌻 Bahçe · 🌙 Çatı · 🔦 Bodrum | Yapım aşamasında | |
 
-Kutular `p` (merkez) + `s` (boyut) ile tanımlanır; `t`: `climb` | `bouncy`, `w: 1` yardımcı modda genişler, `look` görünüm ekler.
+Kral Fare: "!" gösterip koşar; kenara kaç, duvara toslasın. Sersemleyince üstüne zıpla (ya da pati at). 3 vuruşta yenilir, çan ortaya çıkar.
+
+## Yeni oda eklemek
+1. `src/levels/mutfak.json` dosyasını örnek alıp `src/levels/<oda>.json` oluştur.
+2. `src/levels/index.js` içindeki `soon` girdisini bu JSON ile değiştir.
+
+Kutular `p` (merkez) + `s` (boyut) ile tanımlanır; `t`: `climb` | `bouncy` | `launch`, `w: 1` yardımcı modda genişler, `look` görünüm ekler.
+Diğer alanlar:
+- `"g": "grup", "off": true` → kutu bir gruba aittir ve kapalı başlar; anahtarlar grupları açar.
+- `movers`: `from`/`to`/`speed`, `wait` (uçlarda bekleme), `u0` (başlangıç konumu 0..1).
+- `switches`: `plate` (üstüne bas) ya da `button` (pati/üstüne zıpla); `targets: [["grup", true]]`, `bulb` ile yanan ampul.
+- `puzzles`: `need` listesindeki tüm anahtarlar basılınca `targets` açılır; görev satırında sayaç gösterir.
+- `steps`: `{ until: "grup", text }` — grup açılana kadar görev satırında gösterilir.
+- `boss`: `{ type: "kingmouse", p, arena: [x0,z0,x1,z1], name, intro, tip, task, outro }` + `"bellHidden": true`.
+- `challenge.type`: `race` (mor bayrağa ulaş) ya da `collect` (`items` listesindeki mor mamaları topla).
 Konsoldan test: `__game.simulate(60, { moveY: 1, jumpPressed: true })` (pati için `pawPressed: true`).

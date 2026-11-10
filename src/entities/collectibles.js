@@ -31,11 +31,12 @@ export function expandKibble(specs) {
 }
 
 export class KibbleField {
-  constructor(scene, points) {
+  constructor(scene, points, color) {
     this.points = points.map((p, i) => ({ x: p[0], y: p[1], z: p[2], alive: true, phase: i * 0.4 }));
-    const geo = new THREE.DodecahedronGeometry(0.16, 0);
+    const geo = new THREE.DodecahedronGeometry(color ? 0.24 : 0.16, 0);
     geo.scale(1, 0.6, 1);
-    this.mesh = new THREE.InstancedMesh(geo, gold, Math.max(1, this.points.length));
+    const material = color ? new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5, metalness: 0.3, roughness: 0.35, flatShading: true }) : gold;
+    this.mesh = new THREE.InstancedMesh(geo, material, Math.max(1, this.points.length));
     this.mesh.castShadow = true;
     this.mesh.frustumCulled = false;
     this.dummy = new THREE.Object3D();
@@ -137,7 +138,7 @@ export function buildBell() {
 
 // Toplanabilir tekil nesne (kemik/çan) — dönen, sallanan, ışık halkalı
 export class Pickup {
-  constructor(scene, kind, pos, index = 0, collected = false) {
+  constructor(scene, kind, pos, index = 0, collected = false, hidden = false) {
     this.kind = kind;
     this.index = index;
     this.base = new THREE.Vector3(...pos);
@@ -153,20 +154,32 @@ export class Pickup {
     halo.position.y = -0.4;
     this.halo = halo;
     this.obj.add(halo);
-    this.alive = true;
+    this.alive = !hidden;
+    this.obj.visible = !hidden;
     this.scene = scene;
+    this.riseT = 0;
   }
 
-  update(t) {
+  // Gizli nesneyi (boss'un düşürdüğü çan) verilen noktadan hoplatarak ortaya çıkarır
+  reveal(x, y, z) {
+    this.base.set(x, y, z);
+    this.obj.position.set(x, y - 1, z);
+    this.obj.visible = true;
+    this.alive = true;
+    this.riseT = 0.8;
+  }
+
+  update(t, dt = 1 / 60) {
     if (!this.alive) return;
-    this.obj.position.y = this.base.y + Math.sin(t * 2) * 0.12;
+    this.riseT = Math.max(0, this.riseT - dt);
+    this.obj.position.y = this.base.y + Math.sin(t * 2) * 0.12 + (this.riseT > 0 ? Math.sin((1 - this.riseT / 0.8) * Math.PI) * 1.5 - this.riseT * 1.2 : 0);
     this.obj.rotation.y = t * (this.kind === 'bell' ? 1.2 : 1.8);
     if (this.kind === 'bell') this.obj.rotation.z = Math.sin(t * 4) * 0.2;
     this.halo.scale.setScalar(1 + Math.sin(t * 3) * 0.15);
   }
 
   near(x, y, z, r = 0.9) {
-    if (!this.alive) return false;
+    if (!this.alive || this.riseT > 0.2) return false;
     const p = this.obj.position;
     return (p.x - x) ** 2 + (p.y - y) ** 2 + (p.z - z) ** 2 < r * r;
   }

@@ -75,6 +75,13 @@ button {
   background: #ffe066;
 }
 .timer.urgent { background: #ff9b9b; }
+.boss {
+  position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%;
+  transform: translateX(-50%);
+  background: #ffe1ec; font-size: 20px; white-space: nowrap;
+}
+.boss-hp { letter-spacing: 2px; }
+.boss-hp .empty { opacity: 0.25; filter: grayscale(1); }
 
 .round-btn {
   pointer-events: auto;
@@ -331,3 +338,5 @@ h2 { margin: 0 0 14px; font-size: 30px; }
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(255, 216, 138, 0.97); font-size: 28px; font-weight: 900; z-index: 50; text-align: center; padding: 24px;
 }
+.boss.pop { animation: popCenter 0.35s ease; }
+@keyframes popCenter { 50% { transform: translateX(-50%) scale(1.25); } }

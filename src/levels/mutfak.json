@@ -1,0 +1,182 @@
+{
+  "id": "mutfak",
+  "name": "Mutfak",
+  "emoji": "🍳",
+  "spawn": [0, 0, 2.5],
+  "spawnYaw": 0,
+  "killY": -5,
+  "task": "👑 Buzdolabından atla, Kral Fare'yi bul!",
+  "steps": [
+    { "until": "drawers", "text": "🔴 Masadaki kırmızı plakaya bas!" }
+  ],
+  "theme": {
+    "floor": "#fff3e0",
+    "floorLine": "#f2a7a0",
+    "floorTex": "checker",
+    "wall": "#c8f0e0",
+    "wallStripe": "#ffffff",
+    "wallTex": "tile",
+    "ceiling": "#fffaf0",
+    "sky": "#e0f7f1",
+    "music": "kitchen"
+  },
+  "room": { "minX": -12, "maxX": 12, "minZ": 0, "maxZ": 62, "height": 14 },
+  "boxes": [
+    { "p": [-3, 0.75, 7.4], "s": [2.2, 1.5, 2.2], "c": "#c98a55", "look": "chair" },
+    { "p": [-3, 2.8, 12], "s": [8, 0.4, 6], "c": "#d9a066", "look": "table" },
+    { "p": [-6.6, 1.3, 9.4], "s": [0.4, 2.6, 0.4], "c": "#b5814a" },
+    { "p": [0.6, 1.3, 9.4], "s": [0.4, 2.6, 0.4], "c": "#b5814a" },
+    { "p": [-6.6, 1.3, 14.6], "s": [0.4, 2.6, 0.4], "c": "#b5814a" },
+    { "p": [0.6, 1.3, 14.6], "s": [0.4, 2.6, 0.4], "c": "#b5814a" },
+    { "p": [-7.15, 1.65, 12], "s": [0.3, 2.7, 4.6], "c": "#e8574a", "t": "climb", "look": "cloth" },
+    { "p": [4, 2.25, 12], "s": [2.4, 4.5, 2.4], "c": "#ff9db8", "look": "highchair" },
+
+    { "p": [-4, 4.3, 16.8], "s": [2.4, 0.4, 1.8], "c": "#fff8e7", "look": "drawer", "g": "drawers", "off": true },
+    { "p": [-6.5, 5.4, 18.6], "s": [2.4, 0.4, 1.8], "c": "#fff8e7", "look": "drawer", "g": "drawers", "off": true },
+
+    { "p": [-10, 3.25, 23.5], "s": [4, 6.5, 7], "c": "#9fd8c8", "look": "counter" },
+    { "p": [-10, 2.75, 29.5], "s": [4, 5.5, 5], "c": "#9fd8c8", "look": "counter" },
+    { "p": [-10.5, 6.25, 28.6], "s": [1.4, 0.5, 1.4], "c": "#ffe066", "look": "sponge" },
+    { "p": [-9.4, 6.25, 30.5], "s": [1.4, 0.5, 1.4], "c": "#ffe066", "look": "sponge" },
+    { "p": [-10, 3.25, 36], "s": [4, 6.5, 8], "c": "#9fd8c8", "look": "counter" },
+    { "p": [-9.4, 7.0, 24], "s": [1.6, 1.0, 1.0], "c": "#ff8a8a", "t": "launch", "look": "toaster" },
+    { "p": [-10.5, 11.0, 21.6], "s": [3, 0.3, 3], "c": "#c98a55", "look": "spiceshelf" },
+    { "p": [-10.4, 7.1, 34], "s": [1.8, 1.2, 1.8], "c": "#c7ccd6", "look": "pot" },
+    { "p": [-11, 11.75, 30.5], "s": [2, 2.5, 3], "c": "#9fd8c8", "look": "cabinet_up" },
+    { "p": [9, 3.25, 37], "s": [6, 6.5, 6], "c": "#f2f2f2", "look": "oven" },
+
+    { "p": [-10, 7.45, 41.2], "s": [2.2, 0.3, 1.8], "c": "#ff6b6b", "look": "plate", "g": "bridge", "off": true },
+    { "p": [-6.5, 8.65, 41.6], "s": [2.2, 0.3, 2.2], "c": "#ffd166", "look": "plate", "g": "bridge", "off": true },
+    { "p": [-3, 9.85, 42.5], "s": [2.2, 0.3, 2.2], "c": "#5ab0e8", "look": "plate", "g": "bridge", "off": true },
+    { "p": [-5.5, 11.05, 43.3], "s": [2.2, 0.3, 2.2], "c": "#7bc96f", "look": "plate", "g": "bridge", "off": true },
+
+    { "p": [-9.5, 5.75, 46], "s": [5, 11.5, 4], "c": "#e8f4fa", "r": 0.3, "look": "fridge" },
+    { "p": [2.5, 7, 46], "s": [19, 14, 2], "c": "#9fd8c8", "look": "divider" },
+
+    { "p": [-5, 0.75, 55], "s": [1.6, 1.5, 1.6], "c": "#e8574a", "look": "stool" },
+    { "p": [5.5, 0.75, 53], "s": [1.6, 1.5, 1.6], "c": "#5ab0e8", "look": "stool" }
+  ],
+  "water": [
+    { "p": [-10, 5.85, 29.5], "s": [4, 0.7, 5] }
+  ],
+  "movers": [
+    { "s": [2.6, 0.3, 2.6], "from": [-10.4, 7.85, 34], "to": [-10.4, 10.3, 34], "speed": 1.2, "wait": 1.2, "c": "#dfe3ea", "look": "lid" },
+    { "s": [2.6, 0.3, 2.6], "from": [-5.3, 6.35, 34.5], "to": [-5.3, 6.35, 39.5], "speed": 1.6, "wait": 1.0, "c": "#ff6b6b", "look": "plate", "w": 1 },
+    { "s": [2.6, 0.3, 2.6], "from": [-1.3, 6.35, 34.5], "to": [-1.3, 6.35, 39.5], "speed": 1.6, "wait": 1.0, "u0": 0.5, "c": "#ffd166", "look": "plate", "w": 1 },
+    { "s": [2.6, 0.3, 2.6], "from": [2.7, 6.35, 34.5], "to": [2.7, 6.35, 39.5], "speed": 1.6, "wait": 1.0, "u0": 1, "c": "#5ab0e8", "look": "plate", "w": 1 }
+  ],
+  "switches": [
+    { "id": "plateRed", "type": "plate", "p": [-0.3, 3, 13.6], "c": "#ff4d4d", "targets": [["drawers", true]], "toast": "🔴 Çekmeceler açıldı! Tezgâha çık!" },
+    { "id": "red", "type": "button", "p": [-10.8, 6.5, 39.2], "c": "#ff4d4d", "bulb": [-3, 9.5, 44.5] },
+    { "id": "yellow", "type": "button", "p": [-10.9, 11.15, 21.2], "c": "#ffd23d", "bulb": [0.5, 9.5, 44.5] },
+    { "id": "blue", "type": "button", "p": [9.6, 6.5, 37], "c": "#3f8efc", "bulb": [4, 9.5, 44.5] }
+  ],
+  "puzzles": [
+    { "id": "bridge", "need": ["red", "yellow", "blue"], "targets": [["bridge", true]], "task": "🔘 Düğmeler", "showWhen": "drawers", "toast": "🍽️ Tabak köprüsü çıktı! Buzdolabına çık!" }
+  ],
+  "props": [
+    { "type": "window", "p": [11.95, 8, 10], "rot": -90 },
+    { "type": "window", "p": [11.95, 8, 24], "rot": -90 },
+    { "type": "fruitbowl", "p": [-5, 3, 10.6] },
+    { "type": "jar", "p": [-5.6, 3, 13.6] },
+    { "type": "hood", "p": [9.6, 11.8, 37] },
+    { "type": "utensils", "p": [-11.85, 10.2, 38] },
+    { "type": "clock", "p": [11.95, 11.5, 17], "rot": -90 },
+    { "type": "plant", "p": [10.5, 0, 3] },
+    { "type": "plant", "p": [10.5, 0, 60.5] },
+    { "type": "rug", "p": [0, 0, 55], "s": [12, 9], "c": "#ffd166" },
+    { "type": "rug", "p": [2, 0, 4], "s": [6, 4], "c": "#7bc96f" },
+    { "type": "frame", "p": [0, 7, 61.95], "rot": 180, "c": "#ff9f6b" },
+    { "type": "frame", "p": [-3, 7, 0.05], "rot": 0, "c": "#5ab0e8" }
+  ],
+  "kibble": [
+    { "line": [[0, 0.5, 4.5], [0, 0.5, 6.5]], "n": 3 },
+    { "ring": [-3, 2.0, 7.4], "r": 0.6, "n": 5 },
+    { "line": [[-6, 3.5, 11], [0, 3.5, 11]], "n": 6 },
+    { "line": [[-7.6, 1.0, 12], [-7.6, 2.8, 12]], "n": 3 },
+    { "arc": [[0.5, 3.5, 12], [4, 5.0, 12]], "h": 1, "n": 3 },
+    { "ring": [4, 5.1, 12], "r": 0.8, "n": 5 },
+    { "arc": [[-3, 3.5, 14.5], [-4, 5.0, 16.8]], "h": 0.8, "n": 2 },
+    { "arc": [[-4, 5.0, 16.8], [-6.5, 6.1, 18.6]], "h": 0.8, "n": 2 },
+    { "line": [[-9, 7, 20.6], [-9, 7, 22.4]], "n": 2 },
+    { "line": [[-9.4, 8.6, 24], [-9.4, 11.6, 24]], "n": 4 },
+    { "ring": [-10.5, 11.7, 21.8], "r": 0.9, "n": 5 },
+    [-10.5, 7.0, 28.6],
+    [-9.4, 7.0, 30.5],
+    { "line": [[-9, 7, 32.5], [-9, 7, 35.5]], "n": 3 },
+    { "line": [[-10.4, 8.8, 34], [-10.4, 10.6, 34]], "n": 3 },
+    { "line": [[-5.3, 7.1, 37], [2.7, 7.1, 37]], "n": 7 },
+    { "ring": [9, 7.1, 37], "r": 1.3, "n": 6 },
+    { "line": [[-4, 0.5, 22], [-4, 0.5, 40]], "n": 8 },
+    { "line": [[4, 0.5, 22], [4, 0.5, 32]], "n": 5 },
+    [-10, 8.2, 41.2],
+    [-6.5, 9.4, 41.6],
+    [-3, 10.6, 42.5],
+    [-5.5, 11.8, 43.3],
+    { "line": [[-11, 12.1, 45], [-8, 12.1, 47]], "n": 3 },
+    { "ring": [0, 0.5, 55], "r": 3, "n": 10 },
+    { "line": [[-9, 0.5, 52], [-9, 0.5, 60]], "n": 4 },
+    { "line": [[9, 0.5, 52], [9, 0.5, 60]], "n": 4 }
+  ],
+  "bones": [
+    [4, 5.1, 12],
+    [-11, 13.6, 30.5],
+    [-1.3, 9.0, 37]
+  ],
+  "bell": [0, 1.3, 57],
+  "bellHidden": true,
+  "door": { "p": [0, 1, 61.85], "s": [2.2, 2, 0.3] },
+  "checkpoints": [
+    [2, 0, 17],
+    [-9.2, 6.5, 26.4],
+    [-9.5, 11.5, 46]
+  ],
+  "boss": {
+    "type": "kingmouse",
+    "name": "👑 Kral Fare",
+    "p": [0, 0, 58],
+    "arena": [-11, 48.6, 11, 61.4],
+    "intro": "👑 Kral Fare! Koşunca kenara kaç, duvara tos atsın!",
+    "tip": "🛡️ Önce sersemlet: koşarken kaç, duvara çarpsın!",
+    "task": "👑 Kral Fare sersemleyince üstüne zıpla!",
+    "outro": "🎉 Kral Fare yenildi! Altın çanı al!"
+  },
+  "enemies": [
+    { "type": "roamer", "area": [2, 17, 9, 25] },
+    { "type": "spider", "p": [-9.6, 0, 29.5], "minY": 6.7, "maxY": 9.6, "speed": 0.9 },
+    { "type": "mouse", "path": [[-9, 6.5, 36.2], [-9, 6.5, 39.4]], "speed": 0.9 },
+    { "type": "mouse", "path": [[7.4, 6.5, 35], [7.4, 6.5, 39]], "speed": 0.8 }
+  ],
+  "hints": [
+    { "p": [0, 0, 3], "icon": "🍳", "text": "Mutfak! Önce sandalyeye, sonra masaya zıpla." },
+    { "p": [-8.2, 0, 12], "icon": "🧗", "text": "Masa örtüsüne doğru yürü: tırman!" },
+    { "p": [-1, 3, 12.6], "icon": "🔴", "text": "Kırmızı plakaya bas!" },
+    { "p": [-4.4, 4.5, 16.8], "icon": "🗄️", "text": "Çekmecelerden tezgâha zıpla!" },
+    { "p": [-9, 6.5, 22.4], "icon": "🍞", "text": "Tost makinesine zıpla: fırlarsın! Havada rafa yönel." },
+    { "p": [-9, 6.5, 32.6], "icon": "🍲", "text": "Tencere kapağına bin: yukarı çıkar!" },
+    { "p": [-7.4, 6.5, 37], "icon": "🍽️", "text": "Kayan tabaklardan atla! Mavi düğme fırının üstünde." },
+    { "p": [-9.6, 6.5, 38.8], "icon": "🔘", "text": "Düğmeye F ile pati at ya da üstüne zıpla!", "touch": "Düğmeye B ile pati at ya da üstüne zıpla!" },
+    { "p": [-8.6, 11.5, 46.8], "icon": "👑", "text": "Aşağıda Kral Fare var! Koşunca kenara kaç." },
+    { "p": [-11, 6.5, 25.4], "icon": "⏱️", "text": "Zor Parkur! Halkaya bas: mor mamaları topla." }
+  ],
+  "challenge": {
+    "type": "collect",
+    "start": [-11, 6.5, 26],
+    "timeLimit": 60,
+    "reward": "hat_chef",
+    "items": [
+      [-9.4, 12.4, 24],
+      [-10.5, 11.8, 22.6],
+      [-10.5, 7.2, 28.6],
+      [-9.4, 7.2, 30.5],
+      [-9, 7.2, 38],
+      [-10.4, 11.2, 34],
+      [-11, 13.7, 31.6],
+      [-5.3, 7.3, 35],
+      [-1.3, 7.3, 39],
+      [2.7, 7.3, 35],
+      [8, 7.2, 35.5],
+      [10.5, 7.2, 38.5]
+    ]
+  }
+}

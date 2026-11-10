@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mat } from '../props.js';
 import { moveAxis } from '../physics.js';
 
-function eye(g, x, y, z, angry = 0) {
+export function eye(g, x, y, z, angry = 0) {
   const white = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), mat(0xffffff));
   white.position.set(x, y, z);
   g.add(white);
@@ -18,7 +18,7 @@ function eye(g, x, y, z, angry = 0) {
   }
 }
 
-class Enemy {
+export class Enemy {
   constructor(scene, spec) {
     this.spec = spec;
     this.scene = scene;
@@ -123,7 +123,7 @@ class Vacuum extends Enemy {
 }
 
 // Fare gövdesi (oyuncak fare ve gezen fare ortak kullanır). Kurma anahtarını döndürür.
-function buildMouse(model, color, angry) {
+export function buildMouse(model, color, angry) {
   const body = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), mat(color));
   body.scale.set(0.9, 0.75, 1.3);
   body.position.y = 0.22;
@@ -159,7 +159,7 @@ function buildMouse(model, color, angry) {
 
 // Ünlem balonu dokusu (gezen fare saldırmadan önce gösterir)
 let alertTex = null;
-function alertSprite() {
+export function alertSprite() {
   if (!alertTex) {
     const c = document.createElement('canvas');
     c.width = c.height = 64;
@@ -181,7 +181,7 @@ function alertSprite() {
 }
 
 // Sersemleme yıldızları
-function dizzyStars() {
+export function dizzyStars() {
   const g = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const st = new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), new THREE.MeshBasicMaterial({ color: 0xffe066 }));

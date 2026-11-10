@@ -50,10 +50,10 @@ export class Menus {
 
   levels() {
     const rooms = LEVELS.map((l) => {
-      if (l.locked) return `<div class="room locked"><span class="emoji">${l.emoji}</span>${l.name}<span class="stars">🔒 Yakında</span></div>`;
+      if (l.soon) return `<div class="room locked"><span class="emoji">${l.emoji}</span>${l.name}<span class="stars">🛠️ Yakında</span></div>`;
       const ls = levelSave(l.id);
       const bones = ls.bones.filter(Boolean).length;
-      return `<button class="room" data-id="${l.id}"><span class="emoji">${l.emoji}</span>${l.name}<span class="stars">🦴 ${bones}/3 ${ls.done ? '✅' : ''}</span></button>`;
+      return `<button class="room" data-id="${l.id}"><span class="emoji">${l.emoji}</span>${l.name}<span class="stars">🦴 ${bones}/3 ${ls.done ? '✅' : ''}${ls.challengeBest !== null ? ' 🏆' : ''}</span></button>`;
     }).join('');
     const el = render(`
       <div class="panel wide">

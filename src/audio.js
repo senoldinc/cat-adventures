@@ -139,20 +139,40 @@ export const sfx = {
   error() { tone({ type: 'square', f0: 220, dur: 0.15, vol: 0.08 }); tone({ type: 'square', f0: 180, dur: 0.2, vol: 0.08, delay: 0.12 }); },
   win() { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.3, vol: 0.16, delay: i * 0.12 })); },
   tick() { tone({ type: 'square', f0: 1200, dur: 0.04, vol: 0.05 }); },
+  launch() { tone({ type: 'square', f0: 180, f1: 900, dur: 0.3, vol: 0.1, curve: 'lin' }); noise({ dur: 0.15, vol: 0.15, freq: 3000, q: 1 }); tone({ type: 'triangle', f0: 1200, dur: 0.1, vol: 0.1, delay: 0.05 }); },
+  plate() { tone({ type: 'square', f0: 300, f1: 200, dur: 0.08, vol: 0.1 }); tone({ type: 'triangle', f0: 660, dur: 0.15, vol: 0.14, delay: 0.07 }); },
+  button() { tone({ type: 'square', f0: 240, f1: 160, dur: 0.07, vol: 0.12 }); tone({ type: 'triangle', f0: 988, dur: 0.18, vol: 0.15, delay: 0.06 }); tone({ type: 'triangle', f0: 1319, dur: 0.22, vol: 0.12, delay: 0.14 }); },
+  appear() { [784, 988, 1175, 1568].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.2, vol: 0.12, delay: i * 0.06 })); noise({ dur: 0.3, vol: 0.06, freq: 5000, q: 2, delay: 0.05 }); },
+  bossRoar() { [0, 0.18, 0.36].forEach((d, i) => tone({ type: 'sawtooth', f0: 420 - i * 40, f1: 700 - i * 60, dur: 0.16, vol: 0.08, delay: d })); },
+  charge() { noise({ dur: 0.35, vol: 0.12, freq: 600, f1: 1800, q: 1.5 }); },
+  bossHit() { tone({ type: 'square', f0: 900, f1: 300, dur: 0.25, vol: 0.12 }); tone({ type: 'sine', f0: 1800, f1: 2600, dur: 0.12, vol: 0.12, delay: 0.1 }); noise({ dur: 0.2, vol: 0.2, freq: 1500, q: 0.8 }); },
+  victory() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => { tone({ type: 'triangle', f0: f, dur: 0.35, vol: 0.15, delay: i * 0.1 }); tone({ type: 'square', f0: f / 2, dur: 0.2, vol: 0.04, delay: i * 0.1 }); }); },
 };
+
+// Oda müzikleri: kök nota, tempo, desen, akor yürüyüşü, melodi dalga türü
+const TRACKS = {
+  salon: { root: 261.63, bpm: 92, pattern: [0, 2, 4, 2, 3, 2, 4, 1], chords: [0, 5, 7, 3], wave: 'triangle', vol: 0.12 },
+  kitchen: { root: 293.66, bpm: 116, pattern: [0, 4, 2, 4, 1, 4, 3, 4], chords: [0, 5, 0, 7], wave: 'triangle', vol: 0.11 },
+  boss: { root: 220, bpm: 138, pattern: [0, 0, 3, 0, 4, 3, 2, 1], chords: [0, 0, 5, 7], wave: 'square', vol: 0.05 },
+};
+let track = TRACKS.salon;
+let trackStep = 0;
+export function setMusic(name) {
+  const next = TRACKS[name] || TRACKS.salon;
+  if (next === track) return;
+  track = next;
+  trackStep = 0;
+}
 
 // Yumuşak, döngüsel müzik: pentatonik arpej + bas.
 function startMusic() {
   const scale = [0, 2, 4, 7, 9];
-  const chords = [0, 5, 7, 3]; // I – IV – V – vi-ish (semitone offsets)
-  const root = 261.63;
-  const bpm = 92;
-  const step = 60 / bpm / 2;
   let next = ctx.currentTime + 0.2;
-  let i = 0;
-  const pattern = [0, 2, 4, 2, 3, 2, 4, 1];
   function schedule() {
     while (next < ctx.currentTime + 0.4) {
+      const { root, bpm, pattern, chords, wave, vol } = track;
+      const step = 60 / bpm / 2;
+      const i = trackStep;
       const bar = Math.floor(i / 8) % chords.length;
       const c = chords[bar];
       const deg = pattern[i % 8];
@@ -160,11 +180,11 @@ function startMusic() {
       const semi = c + scale[deg % 5] + oct;
       const f = root * Math.pow(2, semi / 12);
       const delay = next - ctx.currentTime;
-      tone({ type: 'triangle', f0: f, dur: step * 1.8, vol: 0.12, attack: 0.02, delay, bus: musicBus });
+      tone({ type: wave, f0: f, dur: step * 1.8, vol, attack: 0.02, delay, bus: musicBus });
       if (i % 8 === 0) tone({ type: 'sine', f0: (root / 2) * Math.pow(2, c / 12), dur: step * 7, vol: 0.22, attack: 0.05, delay, bus: musicBus });
       if (i % 8 === 4) tone({ type: 'sine', f0: (root / 2) * Math.pow(2, (c + 7) / 12), dur: step * 3, vol: 0.12, attack: 0.05, delay, bus: musicBus });
       next += step;
-      i++;
+      trackStep++;
     }
   }
   setInterval(schedule, 100);

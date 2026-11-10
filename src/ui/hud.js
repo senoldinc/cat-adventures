@@ -17,6 +17,7 @@ export class Hud {
     this.task = $('task');
     this.hint = $('hint');
     this.timer = $('timer');
+    this.boss = $('boss');
     this.toastEl = $('toast');
     this.toastT = 0;
     this.last = {};
@@ -72,6 +73,19 @@ export class Hud {
     this.timer.classList.toggle('urgent', left < 5);
   }
 
+  // Boss can çubuğu: isim + sarı kalpler. null gizler.
+  setBoss(name, hp, max) {
+    if (name === null) { this.boss.classList.add('hidden'); this.bossKey = null; return; }
+    const key = `${name}:${hp}`;
+    if (key === this.bossKey) return;
+    const first = this.bossKey === null || this.bossKey === undefined;
+    this.bossKey = key;
+    this.boss.classList.remove('hidden');
+    this.boss.querySelector('.boss-name').textContent = name;
+    this.boss.querySelector('.boss-hp').innerHTML = Array.from({ length: max }, (_, i) => `<span class="${i < hp ? '' : 'empty'}">💛</span>`).join('');
+    if (!first) this.pop(this.boss);
+  }
+
   toast(text, dur = 2) {
     this.toastEl.textContent = text;
     this.toastEl.classList.remove('hidden');
@@ -93,6 +107,7 @@ export class Hud {
     this.curHint = undefined;
     this.setHint(null);
     this.setTimer(null);
+    this.setBoss(null);
     this.toastEl.classList.add('hidden');
     this.toastT = 0;
   }

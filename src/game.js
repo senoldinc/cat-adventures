@@ -7,7 +7,8 @@ import { Effects } from './effects.js';
 import { Hud } from './ui/hud.js';
 import { Menus } from './ui/menus.js';
 import { pollInput, showTouchControls, clearInput, isTouch, touchUiEnabled } from './input.js';
-import { sfx } from './audio.js';
+import { sfx, setMusic } from './audio.js';
+import { createEnemy } from './entities/enemies.js';
 import { save, persist, levelSave } from './save.js';
 import { grant, itemById } from './shop.js';
 import { LEVELS } from './levels/index.js';
@@ -101,6 +102,7 @@ export class Game {
       doubleJump: () => { sfx.doubleJump(); this.effects.sparkle(at(), 0xffffff); },
       land: (v) => { if (v > 4) { sfx.land(); this.effects.dust(at()); p.model.land(Math.min(0.35, v * 0.025)); } },
       bounce: () => { sfx.bounce(); p.model.land(0.3); },
+      launch: () => { sfx.launch(); p.model.land(0.35); this.effects.burst(at(), { color: 0xe0a35a, count: 8, speed: 3, size: 0.12, life: 0.5, up: 2 }); },
       glide: () => sfx.glide(),
       climbStart: () => sfx.climb(),
       climb: () => sfx.climb(),
@@ -123,6 +125,17 @@ export class Game {
     this.sun.target.position.set(cx, 0, cz);
 
     for (const e of this.level.enemies) e.events = { squeak: () => sfx.squeak(), alert: () => sfx.alert() };
+    const boss = this.level.boss;
+    if (boss) {
+      boss.events = {
+        roar: () => sfx.bossRoar(),
+        alert: () => sfx.alert(),
+        charge: () => sfx.charge(),
+        bonk: () => { sfx.bonk(); this.effects.burst({ x: boss.pos.x, y: boss.pos.y + 0.8, z: boss.pos.z }, { color: 0xffe066, count: 8, speed: 3, size: 0.12, life: 0.5 }); },
+        spawn: (n) => this.spawnMinions(n),
+      };
+    }
+    setMusic(data.theme.music || 'salon');
 
     const [sx, sy, sz] = data.spawn;
     this.spawn = { x: sx, y: sy, z: sz };
@@ -269,6 +282,8 @@ export class Game {
 
     const p = player.pos;
     const cx = p.x, cy = p.y + 0.3, cz = p.z;
+    const paw = player.pawActive ? player.pawHitbox() : null;
+    this.updateSwitches(paw);
 
     // Mama
     const got = level.kibble.collect(cx, cy, cz, 0.75);
@@ -323,7 +338,6 @@ export class Game {
     // Düşmanlar
     const pBox = { minX: p.x - player.hw, maxX: p.x + player.hw, minY: p.y, maxY: p.y + player.h, minZ: p.z - player.hw, maxZ: p.z + player.hw };
     const speedK = helper ? 0.6 : 1;
-    const paw = player.pawActive ? player.pawHitbox() : null;
     for (const e of level.enemies) {
       if (!e.alive) continue;
       e.update(dt, speedK, player);
@@ -355,6 +369,8 @@ export class Game {
       }
     }
 
+    if (level.boss?.alive) this.updateBoss(dt, speedK, paw, pBox, input);
+
     // Su ve boşluğa düşme
     if (level.inWater(p, player.hw * 0.6)) {
       sfx.splash();
@@ -380,8 +396,7 @@ export class Game {
 
     // İpuçları ve görev
     this.hud.setHint(this.nearestHint(p));
-    const ch = level.challenge;
-    this.hud.setTask(ch && ch.running ? '⏱️ Mor bayrağa ulaş!' : run.bell ? '🚪 Kedi kapısına git!' : '🔔 Altın çanı bul!');
+    this.hud.setTask(this.taskText());
     this.hud.set({ hearts: run.hearts, maxHearts: MAX_HEARTS, kibble: save.kibble, bones: run.bones, bell: run.bell });
   }
 
@@ -421,7 +436,7 @@ export class Game {
         level.setChallengeActive(true);
         ch.time = 0;
         sfx.checkpoint();
-        this.hud.toast('⏱️ Hadi! Mor bayrağa koş!', 1.5);
+        this.hud.toast(ch.type === 'collect' ? '💜 Hadi! Mor mamaları topla!' : '⏱️ Hadi! Mor bayrağa koş!', 1.8);
       }
       this.hud.setTimer(null);
       return;
@@ -431,8 +446,20 @@ export class Game {
     const left = ch.timeLimit - ch.time;
     if (left < 5 && Math.ceil(left) !== Math.ceil(ch.timeLimit - prev)) sfx.tick();
     this.hud.setTimer(ch.time, ch.timeLimit);
-    const goalBox = ch.boxes[ch.boxes.length - 1];
-    if (this.player.grounded && this.player.groundBox === goalBox) {
+    let won = false;
+    if (ch.type === 'collect') {
+      const got = level.challengeKibble.collect(p.x, p.y + 0.3, p.z, 0.95);
+      for (const k of got) {
+        ch.got++;
+        sfx.kibble();
+        this.effects.sparkle(k, 0xc78bff);
+      }
+      won = ch.got >= level.challengeKibble.total;
+    } else {
+      const goalBox = ch.boxes[ch.boxes.length - 1];
+      won = this.player.grounded && this.player.groundBox === goalBox;
+    }
+    if (won) {
       this.endChallenge(true);
     } else if (ch.time >= ch.timeLimit) {
       this.endChallenge(false);
@@ -460,6 +487,155 @@ export class Game {
     } else {
       this.hud.toast('⏱️ Süre bitti! Tekrar dene 💪', 2);
     }
+  }
+
+  // Plakalar (üstüne bas) ve düğmeler (pati ya da üstüne zıpla)
+  updateSwitches(paw) {
+    const player = this.player;
+    for (const sw of this.level.switches) {
+      if (sw.type === 'plate') {
+        const on = sw.standing(player);
+        if (on && !sw.on) this.pressSwitch(sw, true);
+        else if (!on && sw.on && sw.spec.hold) this.pressSwitch(sw, false);
+      } else if (!sw.on) {
+        const stomp = player.grounded && player.groundBox === sw.box;
+        let hit = false;
+        if (paw && !player.pawHits.has(sw) && sphereHitsBox(paw, sw.aabb())) { player.pawHits.add(sw); hit = true; }
+        if (stomp || hit) this.pressSwitch(sw, true);
+      }
+    }
+  }
+
+  pressSwitch(sw, on) {
+    if (!sw.set(on)) return;
+    const level = this.level;
+    if (sw.type === 'plate') sfx.plate(); else sfx.button();
+    if (on) {
+      this.effects.sparkle({ x: sw.pos.x, y: sw.pos.y + 0.6, z: sw.pos.z }, sw.color.getHex());
+      if (sw.bulb) this.effects.sparkle(sw.bulb.position, sw.color.getHex());
+    }
+    for (const [gid, val] of sw.spec.targets || []) this.setGroup(gid, on ? val : !val);
+    if (on && sw.spec.toast) this.hud.toast(sw.spec.toast, 2.2);
+    for (const pz of level.puzzles) {
+      if (pz.done || !pz.need.includes(sw.id)) continue;
+      const n = this.puzzleCount(pz);
+      if (n === pz.need.length) {
+        pz.done = true;
+        for (const [gid, val] of pz.targets) this.setGroup(gid, val);
+        if (pz.toast) this.hud.toast(pz.toast, 2.6);
+      } else if (on) {
+        this.hud.toast(`${pz.task} ${n}/${pz.need.length}`, 1.4);
+      }
+    }
+  }
+
+  puzzleCount(pz) {
+    return pz.need.filter((id) => this.level.switches.find((s) => s.id === id)?.on).length;
+  }
+
+  setGroup(id, on) {
+    const pts = this.level.setGroup(id, on);
+    pts.forEach((pt, i) => setTimeout(() => this.effects.sparkle(pt, 0xfff1b8), i * 120));
+    if (pts.length) sfx.appear();
+  }
+
+  // ---- Oda patronu ----
+  updateBoss(dt, speedK, paw, pBox, input) {
+    const boss = this.level.boss;
+    const player = this.player;
+    const p = player.pos;
+    if (!boss.started && boss.inArena(p) && player.grounded) this.startBoss();
+    boss.update(dt, speedK, player);
+    if (!boss.started) return;
+    const box = boss.aabb();
+    const busy = boss.state === 'hurt';
+
+    if (paw && !player.pawHits.has(boss) && sphereHitsBox(paw, box)) {
+      player.pawHits.add(boss);
+      if (boss.stunned) this.bossHit();
+      else if (!busy) { sfx.bonk(); this.hud.toast(boss.spec.tip || '🛡️ Önce sersemlet!', 1.6); }
+    }
+    if (!boss.alive || !aabbOverlap(pBox, box)) return;
+    const fromAbove = p.y >= boss.pos.y + boss.h * 0.4 && player.vel.y <= 1;
+    if (fromAbove) {
+      player.bounceOffEnemy();
+      if (input.jumpHeld) player.vel.y = 12;
+      if (boss.stunned) this.bossHit();
+      else if (!busy) { sfx.bonk(); this.hud.toast(boss.spec.tip || '🛡️ Önce sersemlet!', 1.6); }
+    } else if (boss.harmful && player.hurtT <= 0) {
+      this.hurt(boss.pos.x, boss.pos.z);
+      boss.hitPlayer();
+    }
+  }
+
+  startBoss() {
+    const boss = this.level.boss;
+    boss.start();
+    setMusic('boss');
+    this.hud.setBoss(boss.name, boss.hp, boss.maxHp);
+    if (boss.spec.intro) this.hud.toast(boss.spec.intro, 3.2);
+    this.setGroup('gate', true);
+  }
+
+  bossHit() {
+    const boss = this.level.boss;
+    const hp = boss.takeHit();
+    sfx.bossHit();
+    this.effects.burst({ x: boss.pos.x, y: boss.pos.y + 1, z: boss.pos.z }, { color: 0xffffff, count: 12, speed: 4, size: 0.16, life: 0.5 });
+    this.hud.setBoss(boss.name, Math.max(0, hp), boss.maxHp);
+    if (hp <= 0) this.bossDefeated();
+    else this.hud.toast(hp === 2 ? '💥 Bam! Bir daha!' : '💥 Süper! Son bir vuruş!', 1.6);
+  }
+
+  bossDefeated() {
+    const boss = this.level.boss;
+    const at = { x: boss.pos.x, y: boss.pos.y + 0.6, z: boss.pos.z };
+    boss.kill();
+    sfx.poof();
+    sfx.victory();
+    this.effects.poof(at);
+    this.effects.confetti(at);
+    this.run.kibble += 15;
+    save.kibble += 15;
+    this.level.bell.reveal(at.x, 1.3, at.z);
+    this.hud.setBoss(null);
+    this.hud.toast(boss.spec.outro || '🎉 Yendin! Çanı al!', 3);
+    setMusic(this.levelData.theme.music || 'salon');
+    this.setGroup('gate', false);
+    // Kalan küçük yardımcılar da kaçar
+    for (const e of this.level.enemies) if (e.minion && e.alive) { this.effects.poof(e.pos); e.kill(); }
+  }
+
+  spawnMinions(n) {
+    const level = this.level, boss = level.boss;
+    const a = boss.arena;
+    for (let i = 0; i < n; i++) {
+      const e = createEnemy(level.root, { type: 'roamer', area: [a.x0 + 2, a.z0 + 2, a.x1 - 2, a.z1 - 2] }, level.world);
+      e.minion = true;
+      e.pos.set(boss.pos.x + (i ? 1.5 : -1.5), boss.pos.y, boss.pos.z + 1);
+      e.g.position.copy(e.pos);
+      e.events = { squeak: () => sfx.squeak(), alert: () => sfx.alert() };
+      level.enemies.push(e);
+      this.effects.poof({ x: e.pos.x, y: e.pos.y + 0.3, z: e.pos.z });
+    }
+    sfx.squeak();
+    this.hud.toast('🐭 Yardımcı fareler! Pati at!', 1.8);
+  }
+
+  taskText() {
+    const level = this.level, run = this.run, data = this.levelData;
+    const ch = level.challenge;
+    if (ch?.running) return ch.type === 'collect' ? `💜 Mor mamalar ${ch.got}/${level.challengeKibble.total}` : '⏱️ Mor bayrağa ulaş!';
+    const boss = level.boss;
+    if (boss?.alive && boss.started) return boss.spec.task || '👑 Patronu yen!';
+    if (run.bell) return '🚪 Kedi kapısına git!';
+    for (const st of data.steps || []) if (!level.groupOn(st.until)) return st.text;
+    for (const pz of level.puzzles) {
+      if (pz.done) continue;
+      const n = this.puzzleCount(pz);
+      if (n > 0 || (pz.showWhen && level.groupOn(pz.showWhen))) return `${pz.task} ${n}/${pz.need.length}`;
+    }
+    return data.task || '🔔 Altın çanı bul!';
   }
 
   nearestHint(p) {

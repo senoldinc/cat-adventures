@@ -1,11 +1,13 @@
 // Yeni oda eklemek için: JSON dosyasını bu klasöre koy ve aşağıdaki listeye ekle.
+// Tüm odalar baştan açıktır; "soon" olanlar henüz yapım aşamasında.
 import salon from './salon.json';
+import mutfak from './mutfak.json';
 
 export const LEVELS = [
   salon,
-  { id: 'mutfak', name: 'Mutfak', emoji: '🍳', locked: true },
-  { id: 'banyo', name: 'Banyo', emoji: '🛁', locked: true },
-  { id: 'bahce', name: 'Bahçe', emoji: '🌻', locked: true },
-  { id: 'cati', name: 'Çatı', emoji: '🌙', locked: true },
-  { id: 'bodrum', name: 'Bodrum', emoji: '🔦', locked: true },
+  mutfak,
+  { id: 'banyo', name: 'Banyo', emoji: '🛁', soon: true },
+  { id: 'bahce', name: 'Bahçe', emoji: '🌻', soon: true },
+  { id: 'cati', name: 'Çatı', emoji: '🌙', soon: true },
+  { id: 'bodrum', name: 'Bodrum', emoji: '🔦', soon: true },
 ];

@@ -38,6 +38,13 @@ export class Effects {
     this.burst(pos, { color: 0xf3e3c8, count: 5, speed: 1.2, size: 0.1, life: 0.35, up: 0.3 });
   }
 
+  // Boss yenilince renkli konfeti
+  confetti(pos) {
+    for (const color of [0xff5fa2, 0xffd166, 0x5ab0e8, 0x7bc96f, 0xb56fd6]) {
+      this.burst({ x: pos.x, y: pos.y + 0.5, z: pos.z }, { color, count: 8, speed: 6, size: 0.14, life: 1.4, gravity: 9, up: 4, geo: starGeo });
+    }
+  }
+
   // Pati savuruşu: kedinin önünde beliren hilal + pati izleri
   swipe(x, y, z, yaw) {
     const arc = new THREE.Mesh(

@@ -289,6 +289,18 @@ export function buildAccessory(id) {
       }
       break;
     }
+    case 'hat_chef': {
+      const white = mat(0xffffff);
+      g.add(mesh(new THREE.CylinderGeometry(0.13, 0.14, 0.14, 12), white, 0, 0.06, 0));
+      g.add(mesh(new THREE.CylinderGeometry(0.135, 0.135, 0.03, 12), mat(0xe8574a), 0, 0.02, 0));
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2;
+        g.add(mesh(ico(0.09, 1), white, Math.sin(a) * 0.08, 0.2, Math.cos(a) * 0.08));
+      }
+      g.add(mesh(ico(0.11, 1), white, 0, 0.24, 0));
+      g.rotation.z = 0.12;
+      break;
+    }
     case 'scarf_red':
     case 'scarf_blue': {
       const c = id === 'scarf_red' ? 0xe8443a : 0x3f8efc;
