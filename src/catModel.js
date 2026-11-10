@@ -324,6 +324,16 @@ export function buildAccessory(id) {
       g.add(mesh(new THREE.BoxGeometry(0.06, 0.012, 0.012), frame, 0, 0.01, 0.02));
       break;
     }
+    case 'glasses_swim': {
+      for (const s of [-1, 1]) {
+        g.add(mesh(new THREE.TorusGeometry(0.06, 0.02, 5, 12), mat(0x3f8efc), 0.085 * s, 0, 0.025));
+        g.add(mesh(new THREE.CircleGeometry(0.058, 12), new THREE.MeshStandardMaterial({ color: 0x6ad1ff, transparent: true, opacity: 0.6, roughness: 0.1 }), 0.085 * s, 0, 0.03));
+      }
+      const strap = mesh(new THREE.TorusGeometry(0.21, 0.018, 4, 20), mat(0x3f8efc), 0, 0, -0.17);
+      strap.rotation.x = Math.PI / 2;
+      g.add(strap);
+      break;
+    }
     case 'glasses_sun': {
       const dark = mat(0x111111, { roughness: 0.2, metalness: 0.3 });
       for (const s of [-1, 1]) g.add(mesh(new THREE.BoxGeometry(0.12, 0.08, 0.02), dark, 0.085 * s, 0, 0.025));

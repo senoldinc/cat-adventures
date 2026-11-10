@@ -31,6 +31,29 @@ export class Switch {
       this.top.add(paw);
       this.paw = paw;
       this.r = 0.85;
+    } else if (this.type === 'valve') {
+      // Vana: kaide + boru + üstte kırmızı çark. Pati ya da üstüne zıplama çevirir.
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 0.5, 12), mat(0xc7ccd6, { metalness: 0.5, roughness: 0.35 }));
+      base.position.y = 0.25;
+      this.g.add(base);
+      this.wheel = new THREE.Group();
+      this.wheel.position.y = 0.62;
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.07, 6, 16), mat(this.color));
+      rim.rotation.x = Math.PI / 2;
+      this.wheel.add(rim);
+      for (let i = 0; i < 3; i++) {
+        const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.06, 0.08), mat(this.color));
+        spoke.rotation.y = (i / 3) * Math.PI;
+        this.wheel.add(spoke);
+      }
+      this.top = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.12, 8), mat(0xffd166, { emissive: 0xffd166, emissiveIntensity: 0.1 }));
+      this.wheel.add(this.top);
+      this.g.add(this.wheel);
+      this.spinT = 0;
+      this.box = world.add({
+        minX: this.pos.x - 0.5, maxX: this.pos.x + 0.5, minY: this.pos.y, maxY: this.pos.y + 0.5,
+        minZ: this.pos.z - 0.5, maxZ: this.pos.z + 0.5, kind: 'switch',
+      });
     } else {
       // Kaide + kubbe düğme. Kaide katıdır; üstüne zıplamak da düğmeye basar.
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.58, 0.5, 14), mat(0xf4ead5));
@@ -81,6 +104,7 @@ export class Switch {
     if (this.on === on) return false;
     this.on = on;
     this.pressT = on ? 0.25 : 0;
+    if (on) this.spinT = 2.5;
     this.top.material.emissiveIntensity = on ? 0.9 : 0.12;
     if (this.bulbMat) {
       this.bulbMat.emissiveIntensity = on ? 1.6 : 0;
@@ -93,6 +117,9 @@ export class Switch {
     this.pressT = Math.max(0, this.pressT - dt);
     if (this.type === 'plate') {
       this.top.position.y = this.on ? 0.05 : 0.1;
+    } else if (this.type === 'valve') {
+      if (this.spinT > 0) { this.spinT -= dt; this.wheel.rotation.y += dt * 6; }
+      if (!this.on) this.top.material.emissiveIntensity = 0.12 + (Math.sin(t * 4) + 1) * 0.25;
     } else {
       const squish = this.on ? 0.3 : 0.7;
       this.top.scale.y += (squish - this.top.scale.y) * Math.min(1, dt * 18);

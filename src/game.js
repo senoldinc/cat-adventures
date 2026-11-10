@@ -12,7 +12,7 @@ import { createEnemy } from './entities/enemies.js';
 import { save, persist, levelSave } from './save.js';
 import { grant, itemById } from './shop.js';
 import { LEVELS } from './levels/index.js';
-import { aabbOverlap } from './physics.js';
+import { aabbOverlap, moveAxis } from './physics.js';
 
 const STEP = 1 / 60;
 
@@ -281,6 +281,7 @@ export class Game {
     this.cam.update(dt, player.pos, player, input, level.world);
 
     const p = player.pos;
+    this.updateZones(dt);
     const cx = p.x, cy = p.y + 0.3, cz = p.z;
     const paw = player.pawActive ? player.pawHitbox() : null;
     this.updateSwitches(paw);
@@ -436,7 +437,7 @@ export class Game {
         level.setChallengeActive(true);
         ch.time = 0;
         sfx.checkpoint();
-        this.hud.toast(ch.type === 'collect' ? '💜 Hadi! Mor mamaları topla!' : '⏱️ Hadi! Mor bayrağa koş!', 1.8);
+        this.hud.toast(ch.type === 'collect' ? '💜 Hadi! Mor mamaları topla!' : ch.type === 'nofloor' ? '🚫 Yere basma! Mor bayrağa zıpla!' : '⏱️ Hadi! Mor bayrağa koş!', 1.8);
       }
       this.hud.setTimer(null);
       return;
@@ -458,6 +459,14 @@ export class Game {
     } else {
       const goalBox = ch.boxes[ch.boxes.length - 1];
       won = this.player.grounded && this.player.groundBox === goalBox;
+      // "Yere Basma!": yere değen kaybeder
+      if (!won && ch.type === 'nofloor' && this.player.grounded && this.player.groundBox?.kind === 'floor') {
+        this.level.setChallengeActive(false);
+        this.hud.setTimer(null);
+        sfx.error();
+        this.hud.toast('🦶 Yere bastın! Tekrar dene 💪', 2);
+        return;
+      }
     }
     if (won) {
       this.endChallenge(true);
@@ -486,6 +495,28 @@ export class Game {
       persist();
     } else {
       this.hud.toast('⏱️ Süre bitti! Tekrar dene 💪', 2);
+    }
+  }
+
+  // İtme bölgeleri (musluk suyu) ve ortam kabarcıkları
+  updateZones(dt) {
+    const level = this.level, player = this.player, p = player.pos;
+    this.fxT = (this.fxT || 0) + dt;
+    const tick = this.fxT > 0.08;
+    if (tick) this.fxT = 0;
+    for (const z of level.zones) {
+      if (!z.on) continue;
+      const b = z.box;
+      if (z.type === 'push' && p.x + player.hw > b.minX && p.x - player.hw < b.maxX && p.z + player.hw > b.minZ && p.z - player.hw < b.maxZ && p.y < b.maxY && p.y + player.h > b.minY) {
+        if (z.f[0]) moveAxis(level.world, player, 'x', z.f[0] * dt, false);
+        if (z.f[2]) moveAxis(level.world, player, 'z', z.f[2] * dt, false);
+        if (!this.pushT || this.now - this.pushT > 0.6) { sfx.splash(); this.pushT = this.now; if (z.toast) this.hud.toast(z.toast, 1.3); }
+      }
+      if (tick && z.vis === 'stream') this.effects.burst({ x: (b.minX + b.maxX) / 2, y: b.minY + 0.1, z: (b.minZ + b.maxZ) / 2 }, { color: 0x8fd3ff, count: 2, speed: 2, size: 0.08, life: 0.4, gravity: 10, up: 2 });
+    }
+    if (this.levelData.theme.bubbles && tick && Math.random() < 0.35) {
+      const a = Math.random() * Math.PI * 2, r = 3 + Math.random() * 5;
+      this.effects.bubble({ x: p.x + Math.cos(a) * r, y: p.y + Math.random() * 2, z: p.z + Math.sin(a) * r });
     }
   }
 
@@ -625,7 +656,7 @@ export class Game {
   taskText() {
     const level = this.level, run = this.run, data = this.levelData;
     const ch = level.challenge;
-    if (ch?.running) return ch.type === 'collect' ? `💜 Mor mamalar ${ch.got}/${level.challengeKibble.total}` : '⏱️ Mor bayrağa ulaş!';
+    if (ch?.running) return ch.type === 'collect' ? `💜 Mor mamalar ${ch.got}/${level.challengeKibble.total}` : ch.type === 'nofloor' ? '🚫 Yere basmadan bayrağa ulaş!' : '⏱️ Mor bayrağa ulaş!';
     const boss = level.boss;
     if (boss?.alive && boss.started) return boss.spec.task || '👑 Patronu yen!';
     if (run.bell) return '🚪 Kedi kapısına git!';

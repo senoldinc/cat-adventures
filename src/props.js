@@ -191,6 +191,100 @@ export function decorateBox(mesh, look, size, color) {
       const a = (i / 3) * Math.PI * 2;
       add(mesh, new THREE.CylinderGeometry(0.07, 0.09, h - 0.25, 5), mat(0x8a5a32), Math.cos(a) * w * 0.3, -0.125, Math.sin(a) * w * 0.3);
     }
+  } else if (look === 'foam') {
+    // Sabun köpüğü: üstünde kabarcık topları
+    mesh.material = mat(0xffffff, { roughness: 0.3 });
+    for (let i = 0; i < Math.round(w * d * 0.8); i++) {
+      const r = 0.12 + ((i * 37) % 10) * 0.025;
+      const b = add(mesh, new THREE.SphereGeometry(r, 8, 6), new THREE.MeshStandardMaterial({ color: i % 3 ? 0xffffff : 0xe3f4ff, roughness: 0.2, transparent: true, opacity: 0.9 }), ((i * 0.618) % 1 - 0.5) * w * 0.9, h / 2, ((i * 0.381 + 0.13) % 1 - 0.5) * d * 0.9);
+      b.castShadow = false;
+    }
+  } else if (look === 'toilet') {
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    const white = mat(0xffffff, { roughness: 0.35 });
+    add(mesh, new THREE.CylinderGeometry(w * 0.32, w * 0.24, h * 0.8, 12), white, 0, -h * 0.1, 0);
+    const bowl = add(mesh, new THREE.CylinderGeometry(w * 0.48, w * 0.38, h * 0.3, 14), white, w * 0.05, h * 0.3, 0);
+    bowl.scale.z = d / w;
+    const seat = add(mesh, new THREE.TorusGeometry(w * 0.4, 0.12, 6, 16), mat(0x9fd8f0), w * 0.05, h / 2 - 0.05, 0);
+    seat.rotation.x = Math.PI / 2;
+    seat.scale.y = d / w;
+  } else if (look === 'tank') {
+    mesh.material = mat(0xffffff, { roughness: 0.35 });
+    add(mesh, new THREE.BoxGeometry(w + 0.15, 0.2, d + 0.15), mat(0xffffff), 0, h / 2 + 0.05, 0);
+    add(mesh, new THREE.CylinderGeometry(0.2, 0.2, 0.12, 10), mat(0xc0c0c0, { metalness: 0.6 }), 0, h / 2 + 0.2, 0);
+  } else if (look === 'towel') {
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    const n = 5;
+    for (let i = 0; i < n; i++) add(mesh, new THREE.BoxGeometry(w, h / n, d), mat(i % 2 ? 0xffb3c6 : 0xfff0f5), 0, -h / 2 + (h / n) * (i + 0.5), 0);
+    for (let i = 0; i < 4; i++) add(mesh, new THREE.BoxGeometry(0.06, 0.2, 0.06), mat(0xffb3c6), 0, -h / 2 - 0.1, -d / 2 + 0.25 + i * (d - 0.5) / 3);
+  } else if (look === 'towelshelf') {
+    mesh.material = mat(0xdfe3ea, { metalness: 0.5, roughness: 0.3 });
+    for (let i = 0; i < 3; i++) add(mesh, new THREE.CylinderGeometry(0.15, 0.15, 0.5, 8), mat([0x7bc96f, 0x5ab0e8, 0xff9db8][i]), -w * 0.25, h / 2 + 0.25, -d / 2 + 0.5 + i * 0.6);
+  } else if (look === 'tproll') {
+    // Tuvalet kâğıdı bandı: kayan dokulu şerit + iki ucunda rulo
+    const c = document.createElement('canvas');
+    c.width = 32; c.height = 64;
+    const x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, 32, 64);
+    x.fillStyle = '#d6e9ff'; for (let i = 0; i < 4; i++) x.fillRect(0, i * 16, 32, 2);
+    x.fillStyle = '#ff9db8'; x.beginPath(); x.arc(16, 8, 4, 0, Math.PI * 2); x.fill();
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const alongZ = d >= w;
+    tex.repeat.set(1, (alongZ ? d : w) / 1.2);
+    if (!alongZ) tex.rotation = Math.PI / 2;
+    mesh.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 });
+    mesh.userData.scrollTex = tex;
+    mesh.userData.scrollLen = 1.2;
+    const len = alongZ ? d : w;
+    for (const sgn of [-1, 1]) {
+      const roll = add(mesh, new THREE.CylinderGeometry(0.45, 0.45, alongZ ? w + 0.1 : d + 0.1, 14), mat(0xffffff), alongZ ? 0 : (len / 2) * sgn, -0.25, alongZ ? (len / 2) * sgn : 0);
+      roll.rotation.z = alongZ ? Math.PI / 2 : 0;
+      roll.rotation.x = alongZ ? 0 : Math.PI / 2;
+    }
+  } else if (look === 'tubrim') {
+    mesh.material = mat(0xffffff, { roughness: 0.25 });
+    add(mesh, new THREE.BoxGeometry(w + 0.1, 0.15, d + 0.1), mat(0xe3f4ff, { roughness: 0.2 }), 0, h / 2 + 0.05, 0).castShadow = false;
+  } else if (look === 'duckbig') {
+    // Kocaman lastik ördek (kutu boyutuna göre)
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    const yellow = mat(0xffd84d, { roughness: 0.4 });
+    const body = add(mesh, new THREE.SphereGeometry(w / 2, 12, 8), yellow, 0, -h * 0.05, 0);
+    body.scale.set(1, (h * 0.75) / w, d / w);
+    add(mesh, new THREE.SphereGeometry(w * 0.27, 10, 8), yellow, w * 0.22, h * 0.32, 0);
+    add(mesh, new THREE.ConeGeometry(w * 0.09, w * 0.22, 6), mat(0xff8a3d), w * 0.5, h * 0.3, 0).rotation.z = -Math.PI / 2;
+    for (const sz of [-1, 1]) add(mesh, new THREE.SphereGeometry(w * 0.045, 6, 4), mat(0x222222), w * 0.38, h * 0.4, sz * w * 0.12);
+    add(mesh, new THREE.ConeGeometry(w * 0.15, w * 0.3, 4), yellow, -w * 0.45, h * 0.15, 0).rotation.z = Math.PI / 2.5;
+  } else if (look === 'sinkcab') {
+    add(mesh, new THREE.BoxGeometry(w + 0.1, 0.2, d + 0.1), mat(0xffffff, { roughness: 0.3 }), 0, h / 2 + 0.1, 0);
+    const basin = add(mesh, new THREE.CylinderGeometry(w * 0.3, w * 0.25, 0.1, 14), mat(0xdfeefa), 0, h / 2 + 0.21, 0);
+    basin.castShadow = false;
+    add(mesh, new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8), mat(0xc0c0c0, { metalness: 0.6 }), w * 0.38, h / 2 + 0.5, 0);
+    for (const sz of [-1, 1]) add(mesh, new THREE.BoxGeometry(0.05, h * 0.7, d * 0.42), mat(0xfff8e7), -w / 2 - 0.02, -h * 0.05, sz * d * 0.23);
+  } else if (look === 'washer') {
+    mesh.material = mat(0xffffff, { roughness: 0.35 });
+    const door = add(mesh, new THREE.TorusGeometry(Math.min(h, d) * 0.3, 0.18, 8, 24), mat(0xc0c8d4, { metalness: 0.5 }), -w / 2 - 0.05, -h * 0.05, 0);
+    door.rotation.y = Math.PI / 2;
+    const glass = add(mesh, new THREE.CircleGeometry(Math.min(h, d) * 0.29, 24), new THREE.MeshStandardMaterial({ color: 0x8fd3ff, transparent: true, opacity: 0.7, emissive: 0x2a7ab8, emissiveIntensity: 0.2 }), -w / 2 - 0.04, -h * 0.05, 0);
+    glass.rotation.y = -Math.PI / 2;
+    glass.castShadow = false;
+    add(mesh, new THREE.BoxGeometry(0.05, h * 0.14, d * 0.9), mat(0xe8f0f8), -w / 2 - 0.02, h * 0.4, 0);
+    for (let i = 0; i < 3; i++) add(mesh, new THREE.CylinderGeometry(0.18, 0.18, 0.1, 10), mat([0xff6b6b, 0xffd166, 0x5ab0e8][i]), -w / 2 - 0.06, h * 0.4, -d * 0.3 + i * 0.5).rotation.z = Math.PI / 2;
+  } else if (look === 'paddle') {
+    mesh.material = mat(0x5ab0e8, { roughness: 0.4 });
+    for (const sx of [-1, 1]) add(mesh, new THREE.BoxGeometry(0.12, 0.35, d), mat(0x3f8efc), (w / 2 - 0.06) * sx, 0.12, 0);
+  } else if (look === 'basket') {
+    mesh.material = mat(0xd9a066);
+    for (let i = 0; i < 4; i++) add(mesh, new THREE.BoxGeometry(w + 0.04, 0.08, d + 0.04), mat(0xb5814a), 0, -h / 2 + 0.25 + i * (h - 0.4) / 3, 0);
+    const clothes = [0xff9db8, 0x5ab0e8, 0xffd166];
+    clothes.forEach((c, i) => add(mesh, new THREE.SphereGeometry(w * 0.28, 8, 6), mat(c), (i - 1) * w * 0.25, h / 2 + 0.05, ((i % 2) - 0.5) * d * 0.3).scale.y = 0.5);
+  } else if (look === 'scale') {
+    mesh.material = mat(0xf2f2f2);
+    add(mesh, new THREE.BoxGeometry(w * 0.6, 0.04, d * 0.25), mat(0x2b2b2b), 0, h / 2 + 0.01, -d * 0.2);
   } else if (look === 'wallshelf') {
     for (const s of [-1, 1]) {
       const br = add(mesh, new THREE.BoxGeometry(0.15, 0.8, 0.8), mat(0x8a5a32), (w / 3) * s, -0.5, d / 2 - 0.4);
@@ -307,6 +401,42 @@ export function buildProp(spec) {
       add(g, new THREE.CylinderGeometry(0.5, 0.5, 1.2, 12), new THREE.MeshStandardMaterial({ color: 0xe8f6ff, transparent: true, opacity: 0.45, roughness: 0.1 }), 0, 0.6, 0).castShadow = false;
       add(g, new THREE.CylinderGeometry(0.46, 0.46, 0.5, 12), mat(0xffc23d, { emissive: 0x8a5a00, emissiveIntensity: 0.3 }), 0, 0.3, 0);
       add(g, new THREE.CylinderGeometry(0.55, 0.55, 0.18, 12), mat(0xe8574a), 0, 1.25, 0);
+      break;
+    }
+    case 'faucet': {
+      // Yerden yükselen boru, küvetin üstüne uzanan ağız
+      const chrome = mat(0xdfe3ea, { metalness: 0.6, roughness: 0.25 });
+      const H = spec.h || 7.4, L = spec.len || 1.5;
+      add(g, new THREE.CylinderGeometry(0.18, 0.22, H, 10), chrome, 0, H / 2, 0);
+      add(g, new THREE.BoxGeometry(L + 0.2, 0.35, 0.35), chrome, -L / 2, H, 0);
+      add(g, new THREE.CylinderGeometry(0.2, 0.15, 0.4, 10), chrome, -L, H - 0.3, 0);
+      for (const s of [-1, 1]) add(g, new THREE.SphereGeometry(0.2, 8, 6), mat(s < 0 ? 0x5ab0e8 : 0xff6b6b), 0, H - 0.6, 0.35 * s);
+      break;
+    }
+    case 'mirror': {
+      add(g, new THREE.BoxGeometry(3.4, 2.6, 0.1), mat(0xffffff), 0, 0, 0);
+      const glass = add(g, new THREE.BoxGeometry(3.1, 2.3, 0.12), new THREE.MeshStandardMaterial({ color: 0xcfeaff, metalness: 0.6, roughness: 0.05 }), 0, 0, 0.01);
+      glass.castShadow = false;
+      add(g, new THREE.BoxGeometry(0.5, 2.3, 0.13), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 }), -0.6, 0, 0.02).rotation.z = 0.4;
+      break;
+    }
+    case 'wheelring': {
+      // Çamaşır tamburu: kürekler bu halkanın üstünde döner (yalnızca görsel)
+      const r = spec.r || 3;
+      const ring = add(g, new THREE.TorusGeometry(r + 0.2, 0.18, 8, 32), mat(0xc0c8d4, { metalness: 0.5 }), 0, 0, 0);
+      ring.rotation.y = Math.PI / 2;
+      ring.castShadow = false;
+      const hub = add(g, new THREE.CylinderGeometry(0.5, 0.5, 0.4, 12), mat(0x5ab0e8), 0, 0, 0);
+      hub.rotation.z = Math.PI / 2;
+      g.userData.spin = hub;
+      break;
+    }
+    case 'bottles': {
+      const cols = [0x7bc96f, 0xff9db8, 0x5ab0e8, 0xffd166];
+      cols.forEach((c, i) => {
+        add(g, new THREE.CylinderGeometry(0.22, 0.25, 0.8, 8), mat(c), 0, 0.4, -0.75 + i * 0.5);
+        add(g, new THREE.CylinderGeometry(0.08, 0.08, 0.2, 6), mat(0xffffff), 0, 0.9, -0.75 + i * 0.5);
+      });
       break;
     }
     case 'clock': {

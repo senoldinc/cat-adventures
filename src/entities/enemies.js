@@ -356,7 +356,41 @@ class Roamer extends Enemy {
   }
 }
 
+// Kayan sabun — köpüğün üstünde vınlayarak gidip gelir, arkasında kabarcık bırakır
+class Soap extends Enemy {
+  constructor(scene, spec) {
+    super(scene, spec);
+    this.hw = 0.4; this.h = 0.4;
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.4, 10, 6), mat(spec.c || 0xff9db8));
+    body.scale.set(1, 0.45, 0.7);
+    body.position.y = 0.2;
+    this.model.add(body);
+    const label = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 4), mat(0xffffff));
+    label.scale.set(1, 0.2, 0.6);
+    label.position.y = 0.36;
+    this.model.add(label);
+    eye(this.model, -0.12, 0.3, 0.24, 1);
+    eye(this.model, 0.12, 0.3, 0.24, -1);
+    this.a = new THREE.Vector3(...spec.path[0]);
+    this.b = new THREE.Vector3(...spec.path[1]);
+    this.pos.copy(this.a);
+    this.model.rotation.y = Math.PI / 2;
+    this.finish();
+  }
+  update(dt, speedK) {
+    this.t += dt * speedK;
+    const u = (Math.sin(this.t * this.spec.speed) + 1) / 2;
+    const prevX = this.pos.x, prevZ = this.pos.z;
+    this.pos.lerpVectors(this.a, this.b, u);
+    const dx = this.pos.x - prevX, dz = this.pos.z - prevZ;
+    if (Math.abs(dx) + Math.abs(dz) > 1e-5) this.g.rotation.y = Math.atan2(dx, dz) - Math.PI / 2;
+    this.g.position.copy(this.pos);
+    this.model.rotation.z = Math.sin(this.t * 8) * 0.1;
+  }
+}
+
 export function createEnemy(scene, spec, world) {
+  if (spec.type === 'soap') return new Soap(scene, spec);
   if (spec.type === 'roamer') return new Roamer(scene, spec, world);
   if (spec.type === 'vacuum') return new Vacuum(scene, spec);
   if (spec.type === 'mouse') return new ToyMouse(scene, spec);

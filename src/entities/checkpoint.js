@@ -50,8 +50,9 @@ export class CatDoor {
   constructor(scene, spec) {
     const [x, y, z] = spec.p;
     const [w, h, d] = spec.s;
+    const base = y - h / 2; // kapının alt kenarı (yerde değilse bir çıkıntının üstünde)
     this.g = new THREE.Group();
-    this.g.position.set(x, 0, z);
+    this.g.position.set(x, base, z);
     // Çerçeve
     const frame = mat(0xffffff);
     for (const s of [-1, 1]) {
@@ -96,7 +97,7 @@ export class CatDoor {
     scene.add(this.g);
     this.open = false;
     this.openT = 0;
-    this.zone = { minX: x - w / 2, maxX: x + w / 2, minZ: z - 1.6, maxZ: z, maxY: y + h };
+    this.zone = { minX: x - w / 2, maxX: x + w / 2, minZ: z - 1.6, maxZ: z, minY: base - 0.5, maxY: base + h };
   }
 
   unlock() {
@@ -112,7 +113,7 @@ export class CatDoor {
 
   inside(p) {
     const z = this.zone;
-    return this.open && p.x > z.minX && p.x < z.maxX && p.z > z.minZ && p.z < z.maxZ && p.y < z.maxY;
+    return this.open && p.x > z.minX && p.x < z.maxX && p.z > z.minZ && p.z < z.maxZ && p.y < z.maxY && p.y > z.minY;
   }
 }
 

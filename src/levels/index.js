@@ -2,11 +2,12 @@
 // Tüm odalar baştan açıktır; "soon" olanlar henüz yapım aşamasında.
 import salon from './salon.json';
 import mutfak from './mutfak.json';
+import banyo from './banyo.json';
 
 export const LEVELS = [
   salon,
   mutfak,
-  { id: 'banyo', name: 'Banyo', emoji: '🛁', soon: true },
+  banyo,
   { id: 'bahce', name: 'Bahçe', emoji: '🌻', soon: true },
   { id: 'cati', name: 'Çatı', emoji: '🌙', soon: true },
   { id: 'bodrum', name: 'Bodrum', emoji: '🔦', soon: true },

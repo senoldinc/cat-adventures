@@ -18,6 +18,7 @@ export const ITEMS = [
   { id: 'scarf_red', slot: 'scarf', name: 'Kırmızı Fular', icon: '🧣', price: 30 },
   { id: 'scarf_blue', slot: 'scarf', name: 'Mavi Fular', icon: '💙', price: 30 },
   { id: 'glasses_round', slot: 'glasses', name: 'Yuvarlak Gözlük', icon: '👓', price: 45 },
+  { id: 'glasses_swim', slot: 'glasses', name: 'Yüzücü Gözlüğü', icon: '🥽', price: null, reward: 'Banyo Zor Parkuru' },
   { id: 'glasses_sun', slot: 'glasses', name: 'Güneş Gözlüğü', icon: '🕶️', price: 60 },
   { id: 'fur_orange', slot: 'fur', name: 'Turuncu', price: 0, color: FURS.fur_orange.main },
   { id: 'fur_gray', slot: 'fur', name: 'Gri', price: 30, color: FURS.fur_gray.main },

@@ -153,6 +153,7 @@ export const sfx = {
 const TRACKS = {
   salon: { root: 261.63, bpm: 92, pattern: [0, 2, 4, 2, 3, 2, 4, 1], chords: [0, 5, 7, 3], wave: 'triangle', vol: 0.12 },
   kitchen: { root: 293.66, bpm: 116, pattern: [0, 4, 2, 4, 1, 4, 3, 4], chords: [0, 5, 0, 7], wave: 'triangle', vol: 0.11 },
+  bath: { root: 329.63, bpm: 100, pattern: [4, 2, 0, 2, 4, 4, 3, 1], chords: [0, 5, 3, 7], wave: 'sine', vol: 0.15 },
   boss: { root: 220, bpm: 138, pattern: [0, 0, 3, 0, 4, 3, 2, 1], chords: [0, 0, 5, 7], wave: 'square', vol: 0.05 },
 };
 let track = TRACKS.salon;

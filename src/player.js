@@ -5,6 +5,7 @@ import { CatModel } from './catModel.js';
 const RUN = 6.5;
 const ACC_GROUND = 50;
 const ACC_AIR = 24;
+const ACC_SOAP = 7;
 const GRAVITY = 26;
 const JUMP = 9.5;
 const DOUBLE_JUMP = 8.4;
@@ -107,6 +108,16 @@ export class Player {
       p.x += this.groundBox.dx; p.y += this.groundBox.dy; p.z += this.groundBox.dz;
     }
 
+    // Yükselen/kayan bir platform ayakların altına girdiyse üstüne çık (yandan itilip düşme)
+    for (const b of world.overlaps(p.x - this.hw, p.y, p.z - this.hw, p.x + this.hw, p.y + this.h, p.z + this.hw)) {
+      if ((b.dx || b.dy || b.dz) && b.maxY - p.y <= 0.45) {
+        p.y = b.maxY + 0.0005;
+        if (v.y < 0) v.y = 0;
+        this.grounded = true;
+        this.groundBox = b;
+      }
+    }
+
     // Kameraya göre istek yönü
     const fx = Math.sin(camYaw), fz = Math.cos(camYaw);
     const rx = -Math.cos(camYaw), rz = Math.sin(camYaw);
@@ -144,7 +155,9 @@ export class Player {
     const p = this.pos, v = this.vel;
 
     // Yatay ivme
-    const acc = this.grounded ? ACC_GROUND : ACC_AIR;
+    // Sabun köpüğünde kayar: ivme çok düşük, kedi yön değiştirmekte zorlanır
+    const slippery = this.grounded && this.groundBox?.kind === 'soap';
+    const acc = this.grounded ? (slippery ? ACC_SOAP : ACC_GROUND) : ACC_AIR;
     const speed = this.gliding ? RUN * 1.1 : RUN;
     const tx = wx * speed, tz = wz * speed;
     const dvx = tx - v.x, dvz = tz - v.z;

@@ -38,6 +38,11 @@ export class Effects {
     this.burst(pos, { color: 0xf3e3c8, count: 5, speed: 1.2, size: 0.1, life: 0.35, up: 0.3 });
   }
 
+  // Banyo kabarcığı: yavaşça yükselen saydam top
+  bubble(pos) {
+    this.burst(pos, { color: 0xd6efff, count: 1, speed: 0.3, size: 0.07, life: 2.2, gravity: -0.9, up: 0.5 });
+  }
+
   // Boss yenilince renkli konfeti
   confetti(pos) {
     for (const color of [0xff5fa2, 0xffd166, 0x5ab0e8, 0x7bc96f, 0xb56fd6]) {

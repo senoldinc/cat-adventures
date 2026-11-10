@@ -24,6 +24,13 @@ function makeBox(spec) {
   };
 }
 
+function orbitPos(o) {
+  const c = Math.cos(o.a) * o.r, s = Math.sin(o.a) * o.r;
+  if (o.plane === 'zy') return new THREE.Vector3(o.c.x, o.c.y + s, o.c.z + c);
+  if (o.plane === 'xy') return new THREE.Vector3(o.c.x + c, o.c.y + s, o.c.z);
+  return new THREE.Vector3(o.c.x + c, o.c.y, o.c.z + s);
+}
+
 export class Level {
   constructor(data, scene, saveData, helper) {
     this.data = data;
@@ -37,6 +44,9 @@ export class Level {
     this.bobbers = [];
     this.groups = new Map();
     this.pops = [];
+    this.convs = [];
+    this.floats = [];
+    this.waterMeshes = [];
     this.t = 0;
 
     this.buildRoom();
@@ -44,6 +54,13 @@ export class Level {
     for (const spec of data.boxes) this.addBox(spec);
 
     for (const spec of data.movers || []) {
+      if (spec.orbit) {
+        // Dönme dolap gibi: platform daire üstünde döner ama hep yatay kalır
+        const orbit = { c: new THREE.Vector3(...spec.orbit), r: spec.r, speed: spec.speed, a: spec.phase || 0, plane: spec.plane || 'xz' };
+        const box = this.addBox({ ...spec, p: orbitPos(orbit).toArray() });
+        this.movers.push({ box, orbit });
+        continue;
+      }
       const box = this.addBox({ ...spec, p: spec.from });
       this.movers.push({ box, from: new THREE.Vector3(...spec.from), to: new THREE.Vector3(...spec.to), speed: spec.speed, u: spec.u0 || 0, dir: 1, wait: spec.wait || 0, waitT: 0 });
     }
@@ -51,12 +68,22 @@ export class Level {
     for (const spec of data.water || []) {
       const b = makeBox(spec);
       b.solid = false;
+      b.id = spec.id || null;
+      // Vanayla dolan su: grup açılınca üst yüzey `rise` kadar yükselir
+      if (spec.g) {
+        b.g = spec.g;
+        b.base = b.maxY;
+        b.rise = spec.rise || 0;
+        b.riseSpeed = (spec.rise || 0) / (spec.riseTime || 3);
+        if (!this.groups.has(spec.g)) this.groups.set(spec.g, { on: false, boxes: [] });
+      }
       this.water.push(b);
-      const m = new THREE.Mesh(new THREE.BoxGeometry(...spec.s), new THREE.MeshStandardMaterial({ color: 0x6fc3f2, transparent: true, opacity: 0.75, roughness: 0.1, metalness: 0.1 }));
-      m.position.set(...spec.p);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(spec.s[0], 1, spec.s[2]), new THREE.MeshStandardMaterial({ color: 0x6fc3f2, transparent: true, opacity: 0.75, roughness: 0.1, metalness: 0.1 }));
       m.receiveShadow = true;
-      this.waterMesh = m;
+      b.mesh = m;
+      this.waterMeshes.push(m);
       this.root.add(m);
+      this.fitWater(b);
     }
 
     for (const spec of data.props || []) {
@@ -78,6 +105,19 @@ export class Level {
     this.switches = (data.switches || []).map((sp) => new Switch(this.root, sp, this.world));
     this.puzzles = (data.puzzles || []).map((pz) => ({ ...pz, done: false }));
 
+    // Bölgeler: musluk suyu gibi içindekini iten alanlar (aralıklı açılıp kapanabilir)
+    this.zones = (data.zones || []).map((z) => {
+      const box = makeBox(z);
+      const zone = { ...z, box, on: true };
+      if (z.vis === 'stream') {
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.4, z.s[1], 10, 1, true), new THREE.MeshStandardMaterial({ color: 0x8fd3ff, transparent: true, opacity: 0.6, emissive: 0x2a7ab8, emissiveIntensity: 0.3, side: THREE.DoubleSide }));
+        m.position.set(...z.p);
+        this.root.add(m);
+        zone.mesh = m;
+      }
+      return zone;
+    });
+
     // Oda patronu
     this.boss = data.boss ? createBoss(this.root, data.boss, this.world) : null;
 
@@ -92,7 +132,9 @@ export class Level {
     const cx = (room.minX + room.maxX) / 2, cz = (room.minZ + room.maxZ) / 2;
     const T = 1;
 
-    const floorTex = theme.floorTex === 'checker' ? checkerTexture(theme.floor, theme.floorLine) : plankTexture(theme.floor, theme.floorLine);
+    const floorTex = theme.floorTex === 'checker' ? checkerTexture(theme.floor, theme.floorLine)
+      : theme.floorTex === 'tile' ? tileTexture(theme.floor, theme.floorLine)
+        : plankTexture(theme.floor, theme.floorLine);
     floorTex.repeat.set(W / 4, D / 4);
     const floor = new THREE.Mesh(new THREE.BoxGeometry(W + 2, T, D + 2), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.7 }));
     floor.position.set(cx, -T / 2, cz);
@@ -155,6 +197,13 @@ export class Level {
     this.root.add(mesh);
     box.mesh = mesh;
     if (box.widen) this.widenables.push(box);
+    if (spec.conv) {
+      box.conv = spec.conv;
+      this.convs.push(box);
+    }
+    if (spec.float) {
+      this.floats.push({ box, water: spec.float, sink: spec.sink ?? 0.5, restY: spec.p[1], h: spec.s[1], phase: spec.p[0] + spec.p[2] });
+    }
     if (spec.g) {
       if (!this.groups.has(spec.g)) this.groups.set(spec.g, { on: !spec.off, boxes: [] });
       this.groups.get(spec.g).boxes.push(box);
@@ -246,10 +295,58 @@ export class Level {
     }
   }
 
+  // Su kutusunun görselini fizik kutusuna uydurur (yükselen su için)
+  fitWater(w) {
+    const h = w.maxY - w.minY;
+    w.mesh.scale.y = Math.max(0.001, h);
+    w.mesh.position.set((w.minX + w.maxX) / 2, (w.minY + w.maxY) / 2, (w.minZ + w.maxZ) / 2);
+    w.mesh.visible = h > 0.15;
+  }
+
   // Hareketli platformları ilerletir; her kutuya bu karedeki yer değiştirmeyi yazar
   updateMovers(dt) {
+    // Yükselen su
+    for (const w of this.water) {
+      if (!w.g) continue;
+      const target = w.base + (this.groupOn(w.g) ? w.rise : 0);
+      if (w.maxY !== target) {
+        const step = w.riseSpeed * dt;
+        w.maxY = Math.abs(target - w.maxY) <= step ? target : w.maxY + Math.sign(target - w.maxY) * step;
+        this.fitWater(w);
+      }
+    }
+    // Suda yüzen kutular (ördekler): su yükselince onlar da yükselir
+    for (const f of this.floats) {
+      const w = this.water.find((x) => x.id === f.water);
+      const b = f.box;
+      const floatY = w ? w.maxY - f.sink + f.h / 2 : -Infinity;
+      const floating = floatY > f.restY;
+      const y = floating ? floatY + Math.sin(this.t * 2 + f.phase) * 0.06 : f.restY;
+      const cy = (b.minY + b.maxY) / 2;
+      b.dy = y - cy;
+      b.minY += b.dy; b.maxY += b.dy;
+      b.mesh.position.y = y;
+      b.mesh.rotation.z = floating ? Math.sin(this.t * 1.5 + f.phase) * 0.05 : 0;
+    }
+    // Taşıma bantları: kutu yerinde kalır, üstündekini taşır
+    for (const b of this.convs) {
+      b.dx = b.conv[0] * dt;
+      b.dz = b.conv[1] * dt;
+      const tex = b.mesh.userData.scrollTex;
+      if (tex) tex.offset.y -= (Math.hypot(b.conv[0], b.conv[1]) * dt) / (b.mesh.userData.scrollLen || 4) * Math.sign(b.conv[0] + b.conv[1]);
+    }
     for (const m of this.movers) {
       if (!m.box.active) { m.box.dx = m.box.dy = m.box.dz = 0; continue; }
+      if (m.orbit) {
+        m.orbit.a += m.orbit.speed * dt;
+        const q = orbitPos(m.orbit);
+        const b = m.box;
+        const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2, cz = (b.minZ + b.maxZ) / 2;
+        b.dx = q.x - cx; b.dy = q.y - cy; b.dz = q.z - cz;
+        b.minX += b.dx; b.maxX += b.dx; b.minY += b.dy; b.maxY += b.dy; b.minZ += b.dz; b.maxZ += b.dz;
+        b.mesh.position.copy(q);
+        continue;
+      }
       const len = m.from.distanceTo(m.to);
       if (m.waitT > 0) m.waitT -= dt;
       else {
@@ -286,7 +383,14 @@ export class Level {
     this.door.update(dt, t);
     for (const b of this.bobbers) { b.position.y = 0.12 + Math.sin(t * 2 + b.position.x) * 0.05; b.rotation.y = Math.sin(t * 0.5 + b.position.z) * 0.6; }
     if (this.clockHand) this.clockHand.rotation.z = -t * 0.5;
-    if (this.waterMesh) this.waterMesh.material.color.setHSL(0.56, 0.8, 0.68 + Math.sin(t * 1.5) * 0.03);
+    for (const m of this.waterMeshes) m.material.color.setHSL(0.56, 0.8, 0.68 + Math.sin(t * 1.5) * 0.03);
+    for (const z of this.zones) {
+      z.on = !z.period || ((t + (z.phase || 0)) % (z.period[0] + z.period[1])) < z.period[0];
+      if (z.mesh) {
+        z.mesh.visible = z.on;
+        z.mesh.scale.x = z.mesh.scale.z = 1 + Math.sin(t * 20) * 0.08;
+      }
+    }
     if (this.challengePad) this.challengePad.update(t, this.challenge.running);
     if (this.challengeKibble?.mesh.visible) this.challengeKibble.update(t);
     for (const sw of this.switches) sw.update(dt, t);
