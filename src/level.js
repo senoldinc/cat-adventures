@@ -1,7 +1,7 @@
 // JSON'dan oda kurar: kutular (fizik + görsel), hareketli platformlar, su, dekor, toplanabilirler, düşmanlar.
 import * as THREE from 'three';
 import { World } from './physics.js';
-import { boxMesh, decorateBox, buildProp, plankTexture, stripeTexture, checkerTexture, tileTexture, grassTexture, fenceTexture, mat } from './props.js';
+import { boxMesh, decorateBox, buildProp, plankTexture, stripeTexture, checkerTexture, tileTexture, grassTexture, fenceTexture, roofTexture, mat } from './props.js';
 import { KibbleField, expandKibble, Pickup } from './entities/collectibles.js';
 import { Checkpoint, CatDoor, ChallengePad } from './entities/checkpoint.js';
 import { createEnemy } from './entities/enemies.js';
@@ -51,8 +51,10 @@ export class Level {
     this.flyers = [];
     this.t = 0;
 
+    this.crumbles = [];
     this.buildRoom();
 
+    for (const r of data.roofs || []) this.buildRoof(r);
     for (const spec of data.boxes) this.addBox(spec);
 
     for (const spec of data.movers || []) {
@@ -217,6 +219,57 @@ export class Level {
     this.world.add({ minX: room.minX - 1, maxX: room.maxX + 1, minY: H, maxY: H + T, minZ: room.minZ - 1, maxZ: room.maxZ + 1, kind: 'ceiling' });
   }
 
+  // Eğimli çatı: ortada sırt, iki yana 0.25'er alçalan kiremit sıraları (yürürken otomatik iner/çıkar), en dışta oluk
+  buildRoof(r) {
+    const len = r.z1 - r.z0, zc = (r.z0 + r.z1) / 2;
+    const rowW = r.rowW || 1.2, rows = r.rows || 8, step = r.step || 0.25, ridge = r.ridge;
+    const tex = roofTexture();
+    const add = (x, w, top, look) => {
+      const box = this.addBox({ p: [x, top / 2, zc], s: [w, top, len], c: '#c8553d', look: look || 'roof' });
+      if (!look) { box.mesh.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, flatShading: true }); box.mesh.material.map.repeat.set(1, len / 1.2); }
+      return box;
+    };
+    add(0, rowW, ridge, 'ridge');
+    const half = rowW / 2;
+    for (let k = 1; k <= rows; k++) {
+      for (const sgn of [-1, 1]) add(sgn * (half + (k - 0.5) * rowW), rowW, ridge - step * k);
+    }
+    const inner = half + rows * rowW;
+    const gw = (this.data.room.maxX - inner);
+    for (const sgn of [-1, 1]) add(sgn * (inner + gw / 2), gw, r.gutter, 'gutter');
+  }
+
+  // Basınca çöken kiremit
+  touchCrumble(box) {
+    const c = this.crumbles.find((x) => x.box === box);
+    if (c && c.state === 'idle') { c.state = 'shake'; c.t = this.helper ? 1.2 : 0.7; return true; }
+    return false;
+  }
+
+  updateCrumbles(dt) {
+    for (const c of this.crumbles) {
+      const m = c.box.mesh;
+      if (c.state === 'idle') continue;
+      c.t -= dt;
+      if (c.state === 'shake') {
+        m.position.x = c.home.x + Math.sin(this.t * 60) * 0.05;
+        if (c.t <= 0) { c.state = 'fall'; c.t = 2.5; c.box.active = false; c.vy = 0; this.events?.crumble?.(c.home); }
+      } else if (c.state === 'fall') {
+        c.vy -= 20 * dt;
+        m.position.y += c.vy * dt;
+        m.rotation.z += dt * 2;
+        if (c.t <= 0) {
+          c.state = 'idle';
+          c.box.active = true;
+          m.position.copy(c.home);
+          m.rotation.set(0, 0, 0);
+          m.scale.setScalar(0.01);
+          this.pops.push({ mesh: m, t: 0 });
+        }
+      }
+    }
+  }
+
   // Çitin ötesi: geniş çim, uzak ağaçlar, bulutlar, güneş
   buildOutdoor(theme, cx, cz, W, D) {
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), mat(theme.farGround || 0x8fd36b));
@@ -242,7 +295,24 @@ export class Level {
       tree.scale.setScalar(1 + rnd() * 0.8);
       this.root.add(tree);
     }
-    if (theme.night) return;
+    if (theme.night) {
+      // Yıldızlı gök + ay
+      const pts = [];
+      for (let i = 0; i < 400; i++) {
+        const a = rnd() * Math.PI * 2, e = 0.15 + rnd() * 1.3, r = 120;
+        pts.push(cx + Math.cos(a) * Math.cos(e) * r, Math.sin(e) * r, cz + Math.sin(a) * Math.cos(e) * r);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+      this.root.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.9, sizeAttenuation: true })));
+      const moon = new THREE.Mesh(new THREE.SphereGeometry(6, 20, 14), new THREE.MeshBasicMaterial({ color: 0xfff6c8 }));
+      moon.position.set(cx - 40, 55, cz + 70);
+      this.root.add(moon);
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(9, 20, 14), new THREE.MeshBasicMaterial({ color: 0xfff6c8, transparent: true, opacity: 0.15 }));
+      glow.position.copy(moon.position);
+      this.root.add(glow);
+      return;
+    }
     for (let i = 0; i < 9; i++) {
       const cloud = new THREE.Group();
       for (let k = 0; k < 4; k++) {
@@ -280,6 +350,7 @@ export class Level {
     box.mesh = mesh;
     if (box.widen) this.widenables.push(box);
     if (spec.grow) box.grow = true;
+    if (spec.t === 'crumble') this.crumbles.push({ box, state: 'idle', t: 0, home: mesh.position.clone() });
     if (spec.conv) {
       box.conv = spec.conv;
       this.convs.push(box);
@@ -355,16 +426,34 @@ export class Level {
     const c = this.challenge;
     if (!c) return;
     c.running = on;
-    for (const b of c.boxes) {
-      b.active = on;
-      b.mesh.material.opacity = on ? 0.85 : 0.18;
-      b.mesh.castShadow = on;
-    }
+    c.step = 0;
+    c.boxes.forEach((b, i) => {
+      const act = on && (c.type !== 'sequence' || i === 0);
+      b.active = act;
+      b.mesh.visible = c.type !== 'sequence' || act || !on;
+      b.mesh.material.opacity = act ? 0.85 : 0.18;
+      b.mesh.castShadow = act;
+    });
     if (this.challengeFlag) this.challengeFlag.visible = on;
     if (this.challengeKibble) {
       this.challengeKibble.mesh.visible = on;
       if (on) { c.got = 0; this.challengeKibble.points.forEach((p) => (p.alive = true)); }
     }
+  }
+
+  // "Yıldız Yolu": üstüne basılan platformdan sonrakini göster, öncekini söndür
+  advanceSequence(i) {
+    const c = this.challenge;
+    if (i < c.step || i >= c.boxes.length - 1) return false;
+    c.step = i + 1;
+    const next = c.boxes[i + 1];
+    next.active = true;
+    next.mesh.visible = true;
+    next.mesh.material.opacity = 0.85;
+    next.mesh.scale.setScalar(0.01);
+    this.pops.push({ mesh: next.mesh, t: 0 });
+    if (i > 0) { const prev = c.boxes[i - 1]; prev.active = false; prev.mesh.visible = false; }
+    return true;
   }
 
   setHelper(on) {
@@ -496,6 +585,7 @@ export class Level {
     if (this.challengePad) this.challengePad.update(t, this.challenge.running);
     if (this.challengeKibble?.mesh.visible) this.challengeKibble.update(t);
     for (const sw of this.switches) sw.update(dt, t);
+    this.updateCrumbles(dt);
     // Beliren kutular: lastik gibi büyür
     for (let i = this.pops.length - 1; i >= 0; i--) {
       const pp = this.pops[i];

@@ -361,6 +361,57 @@ export function decorateBox(mesh, look, size, color) {
   } else if (look === 'stone') {
     mesh.material = mat(0xcfc6b8);
     for (let i = 0; i < 6; i++) add(mesh, new THREE.BoxGeometry(w / 3 - 0.08, 0.04, d / 2 - 0.08), mat(i % 2 ? 0xd9d2c5 : 0xc2b8a8), -w / 3 + (i % 3) * (w / 3), h / 2 + 0.01, (Math.floor(i / 3) - 0.5) * (d / 2)).castShadow = false;
+  } else if (look === 'ridge') {
+    mesh.material = mat(0x9c3b2a);
+    for (let i = 0; i < Math.floor(d / 1.2); i++) {
+      const cap = add(mesh, new THREE.CylinderGeometry(w * 0.45, w * 0.45, 1.1, 8, 1, false, 0, Math.PI), mat(0xb8442f), 0, h / 2, -d / 2 + 0.6 + i * 1.2);
+      cap.rotation.x = Math.PI / 2;
+      cap.rotation.y = Math.PI / 2;
+    }
+  } else if (look === 'gutter') {
+    mesh.material = mat(0x5a4a6a);
+    const g1 = add(mesh, new THREE.BoxGeometry(0.15, 0.4, d), mat(0xb0b8c8, { metalness: 0.5 }), (w / 2 - 0.08) * (mesh.position.x > 0 ? 1 : -1), h / 2 + 0.2, 0);
+    g1.castShadow = false;
+  } else if (look === 'chimney') {
+    mesh.material = mat(0xb0563b);
+    for (let i = 0; i < Math.floor(h / 0.5); i++) add(mesh, new THREE.BoxGeometry(w + 0.02, 0.05, d + 0.02), mat(0xe8d6c0), 0, -h / 2 + 0.5 * (i + 1), 0).castShadow = false;
+    add(mesh, new THREE.BoxGeometry(w + 0.3, 0.3, d + 0.3), mat(0x8a3f2a), 0, h / 2 - 0.15, 0);
+  } else if (look === 'chimneywall') {
+    mesh.material = mat(0xb0563b);
+  } else if (look === 'dormer') {
+    mesh.material = mat(0xe8d6c0);
+    const roof = add(mesh, new THREE.ConeGeometry(Math.max(w, d) * 0.75, 1.4, 4), mat(0x9c3b2a), 0, h / 2 + 0.6, 0);
+    roof.rotation.y = Math.PI / 4;
+    roof.scale.y = 0.6;
+    const win = add(mesh, new THREE.BoxGeometry(0.05, 1.4, 1.2), new THREE.MeshBasicMaterial({ color: 0xffd36b }), -w / 2 - 0.02, h / 2 - 1.2, 0);
+    win.castShadow = false;
+    add(mesh, new THREE.BoxGeometry(0.08, 1.5, 0.08), mat(0xffffff), -w / 2 - 0.05, h / 2 - 1.2, 0);
+  } else if (look === 'nest') {
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    const ring = add(mesh, new THREE.TorusGeometry(w * 0.38, 0.22, 6, 14), mat(0xa8723a), 0, 0.15, 0);
+    ring.rotation.x = Math.PI / 2;
+    add(mesh, new THREE.CylinderGeometry(w * 0.4, w * 0.3, 0.3, 12), mat(0x8a5a32), 0, 0, 0);
+    for (let i = 0; i < 3; i++) add(mesh, new THREE.SphereGeometry(0.14, 8, 6), mat(0xbfe8ff), (i - 1) * 0.25, 0.25, 0.1).scale.y = 1.3;
+  } else if (look === 'dish') {
+    mesh.material = mat(0xdfe3ea, { metalness: 0.3 });
+    const bowl = add(mesh, new THREE.SphereGeometry(Math.min(w, d) * 0.45, 16, 8, 0, Math.PI * 2, 0, Math.PI / 3), mat(0xf4f6fa, { side: THREE.DoubleSide, metalness: 0.3 }), w * 0.25, h / 2 + 1.2, d * 0.25);
+    bowl.rotation.z = 2.4;
+    add(mesh, new THREE.CylinderGeometry(0.15, 0.25, h + 14, 8), mat(0x8a8f9c), 0, -h / 2 - 7, 0);
+  } else if (look === 'crumble') {
+    mesh.material = mat(0xd98a5a);
+    for (let i = 0; i < 3; i++) {
+      const crack = add(mesh, new THREE.BoxGeometry(w * 0.8, 0.03, 0.05), mat(0x4a2a1a), 0, h / 2 + 0.01, (i - 1) * d * 0.25);
+      crack.rotation.y = 0.5 - i * 0.4;
+      crack.castShadow = false;
+    }
+  } else if (look === 'scoop') {
+    mesh.material = mat(0xffd166, { metalness: 0.4 });
+    add(mesh, new THREE.BoxGeometry(w, 0.4, 0.1), mat(0xe8a93d), 0, 0.2, -d / 2);
+  } else if (look === 'moontile') {
+    mesh.material = new THREE.MeshStandardMaterial({ color: 0xfff1a8, emissive: 0xffd447, emissiveIntensity: 0.7, roughness: 0.3, flatShading: true });
+    const st = add(mesh, new THREE.OctahedronGeometry(0.3, 0), new THREE.MeshBasicMaterial({ color: 0xffffff }), 0, h / 2 + 0.3, 0);
+    st.castShadow = false;
   } else if (look === 'wallshelf') {
     for (const s of [-1, 1]) {
       const br = add(mesh, new THREE.BoxGeometry(0.15, 0.8, 0.8), mat(0x8a5a32), (w / 3) * s, -0.5, d / 2 - 0.4);
@@ -578,6 +629,25 @@ export function buildProp(spec) {
       add(g, new THREE.ConeGeometry(0.6, 0.5, 10), mat(0xe8c048), 0, 3.25, 0);
       break;
     }
+    case 'antenna': {
+      const metal = mat(0xb0b8c8, { metalness: 0.6 });
+      add(g, new THREE.CylinderGeometry(0.06, 0.08, spec.h || 4, 6), metal, 0, (spec.h || 4) / 2, 0);
+      for (let i = 0; i < 4; i++) add(g, new THREE.BoxGeometry(2 - i * 0.35, 0.06, 0.06), metal, 0, (spec.h || 4) * 0.5 + i * 0.5, 0);
+      const blink = add(g, new THREE.SphereGeometry(0.12, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff4d4d }), 0, (spec.h || 4) + 0.1, 0);
+      g.userData.blink = blink;
+      break;
+    }
+    case 'vanepole': {
+      add(g, new THREE.CylinderGeometry(0.12, 0.15, spec.h || 3, 8), mat(0x6b6f7a, { metalness: 0.5 }), 0, (spec.h || 3) / 2, 0);
+      const top = new THREE.Group();
+      top.position.y = spec.h || 3;
+      add(top, new THREE.ConeGeometry(0.3, 0.8, 4), mat(0xffd166), 0.9, 0, 0).rotation.z = -Math.PI / 2;
+      add(top, new THREE.BoxGeometry(1.6, 0.05, 0.05), mat(0x6b6f7a), 0, 0, 0);
+      add(top, new THREE.BoxGeometry(0.05, 0.5, 0.5), mat(0xffd166), -0.8, 0, 0);
+      g.add(top);
+      g.userData.spin = top;
+      break;
+    }
     case 'clock': {
       add(g, new THREE.CylinderGeometry(0.9, 0.9, 0.12, 16), mat(0xffffff), 0, 0, 0).rotation.x = Math.PI / 2;
       add(g, new THREE.TorusGeometry(0.9, 0.08, 6, 16), mat(0xe8574a), 0, 0, 0.02);
@@ -695,5 +765,28 @@ export function fenceTexture(wood, line, length) {
   t.wrapS = THREE.RepeatWrapping;
   t.repeat.set(length / 1.1, 1);
   t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// Kiremit dokusu (paylaşılan)
+let roofTex = null;
+export function roofTexture() {
+  if (!roofTex) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const x = c.getContext('2d');
+    x.fillStyle = '#c8553d'; x.fillRect(0, 0, 64, 64);
+    x.fillStyle = '#a8432f';
+    for (let r = 0; r < 2; r++) for (let i = 0; i < 3; i++) {
+      x.beginPath(); x.arc(i * 32 + (r ? 16 : 0), r * 32 + 32, 15, Math.PI, 0); x.fill();
+    }
+    x.strokeStyle = '#7a2f20'; x.lineWidth = 2;
+    for (let r = 0; r < 2; r++) { x.beginPath(); x.moveTo(0, r * 32 + 31); x.lineTo(64, r * 32 + 31); x.stroke(); }
+    roofTex = new THREE.CanvasTexture(c);
+    roofTex.wrapS = roofTex.wrapT = THREE.RepeatWrapping;
+    roofTex.colorSpace = THREE.SRGBColorSpace;
+  }
+  const t = roofTex.clone();
+  t.needsUpdate = true;
   return t;
 }

@@ -4,12 +4,13 @@ import salon from './salon.json';
 import mutfak from './mutfak.json';
 import banyo from './banyo.json';
 import bahce from './bahce.json';
+import cati from './cati.json';
 
 export const LEVELS = [
   salon,
   mutfak,
   banyo,
   bahce,
-  { id: 'cati', name: 'Çatı', emoji: '🌙', soon: true },
+  cati,
   { id: 'bodrum', name: 'Bodrum', emoji: '🔦', soon: true },
 ];

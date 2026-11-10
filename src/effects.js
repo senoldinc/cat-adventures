@@ -38,6 +38,15 @@ export class Effects {
     this.burst(pos, { color: 0xf3e3c8, count: 5, speed: 1.2, size: 0.1, life: 0.35, up: 0.3 });
   }
 
+  // Belirli yönde süzülen parçacık (rüzgârda yaprak, bacadan duman)
+  drift(pos, v, color, life = 1.2, size = 0.12) {
+    const m = new THREE.Mesh(sphereGeo, new THREE.MeshBasicMaterial({ color, transparent: true }));
+    m.position.set(pos.x, pos.y, pos.z);
+    m.scale.setScalar(size);
+    this.scene.add(m);
+    this.parts.push({ m, v: new THREE.Vector3(v.x, v.y, v.z), life, max: life, s: size, gravity: 0, keep: true });
+  }
+
   // Banyo kabarcığı: yavaşça yükselen saydam top
   bubble(pos) {
     this.burst(pos, { color: 0xd6efff, count: 1, speed: 0.3, size: 0.07, life: 2.2, gravity: -0.9, up: 0.5 });
@@ -79,7 +88,7 @@ export class Effects {
         continue;
       }
       p.v.y -= p.gravity * dt;
-      p.v.multiplyScalar(Math.exp(-dt * 2));
+      if (!p.keep) p.v.multiplyScalar(Math.exp(-dt * 2));
       p.m.position.addScaledVector(p.v, dt);
       const k = p.life / p.max;
       p.m.material.opacity = k;

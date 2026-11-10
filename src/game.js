@@ -92,6 +92,8 @@ export class Game {
     this.sun = sun;
     this.scene.add(sun);
     this.scene.add(sun.target);
+    this.catLight = new THREE.PointLight(0xffe2b8, 0, 7, 1.5);
+    this.scene.add(this.catLight);
   }
 
   wirePlayerEvents() {
@@ -141,6 +143,17 @@ export class Game {
       };
     }
     setMusic(data.theme.music || 'salon');
+    // Gece: soğuk ay ışığı + kedinin etrafında yumuşak ışık
+    const night = !!data.theme.night;
+    this.hemi.color.setHex(night ? 0x8fa6ff : 0xfff4e0);
+    this.hemi.groundColor.setHex(night ? 0x2a2440 : 0xb07a4a);
+    this.hemi.intensity = night ? 1.1 : 2.0;
+    this.sun.color.setHex(night ? 0xbfd4ff : 0xfff1d6);
+    this.sun.intensity = night ? 1.3 : 2.6;
+    this.catLight.intensity = night ? 5 : 0;
+    this.level.events = {
+      crumble: (pt) => { sfx.crumble(); this.effects.burst({ x: pt.x, y: pt.y + 0.2, z: pt.z }, { color: 0xc8553d, count: 10, speed: 2.5, size: 0.14, life: 0.7, gravity: 12, up: 1 }); },
+    };
 
     const [sx, sy, sz] = data.spawn;
     this.spawn = { x: sx, y: sy, z: sz };
@@ -240,6 +253,7 @@ export class Game {
 
   updateBlob() {
     const p = this.player.pos;
+    this.catLight.position.set(p.x, p.y + 1.6, p.z);
     const g = this.level.world.groundBelow(p.x, p.y + 0.05, p.z, 0.05);
     if (g.y === -Infinity) { this.blob.visible = false; return; }
     const h = p.y - g.y;
@@ -261,6 +275,7 @@ export class Game {
 
   step(dt, forced) {
     const input = forced || pollInput(this.now);
+    this.lastInput = input;
     if (input.pausePressed) { this.pause(); return; }
 
     const run = this.run;
@@ -287,6 +302,7 @@ export class Game {
 
     const p = player.pos;
     this.updateZones(dt);
+    if (player.grounded && player.groundBox?.kind === 'crumble' && level.touchCrumble(player.groundBox)) sfx.crack();
     const cx = p.x, cy = p.y + 0.3, cz = p.z;
     const paw = player.pawActive ? player.pawHitbox() : null;
     this.updateSwitches(paw);
@@ -449,7 +465,7 @@ export class Game {
         level.setChallengeActive(true);
         ch.time = 0;
         sfx.checkpoint();
-        this.hud.toast(ch.type === 'collect' ? '💜 Hadi! Mor mamaları topla!' : ch.type === 'nofloor' ? '🚫 Yere basma! Mor bayrağa zıpla!' : '⏱️ Hadi! Mor bayrağa koş!', 1.8);
+        this.hud.toast(ch.type === 'sequence' ? '⭐ Yıldız yolu! Beliren platforma zıpla!' : ch.type === 'collect' ? '💜 Hadi! Mor mamaları topla!' : ch.type === 'nofloor' ? '🚫 Yere basma! Mor bayrağa zıpla!' : '⏱️ Hadi! Mor bayrağa koş!', 1.8);
       }
       this.hud.setTimer(null);
       return;
@@ -471,6 +487,10 @@ export class Game {
     } else {
       const goalBox = ch.boxes[ch.boxes.length - 1];
       won = this.player.grounded && this.player.groundBox === goalBox;
+      if (ch.type === 'sequence' && this.player.grounded) {
+        const i = ch.boxes.indexOf(this.player.groundBox);
+        if (i >= 0 && level.advanceSequence(i)) sfx.star();
+      }
       // "Yere Basma!": yere değen kaybeder
       if (!won && ch.type === 'nofloor' && this.player.grounded && this.player.groundBox?.kind === 'floor') {
         this.level.setChallengeActive(false);
@@ -557,9 +577,26 @@ export class Game {
     this.fxT = (this.fxT || 0) + dt;
     const tick = this.fxT > 0.08;
     if (tick) this.fxT = 0;
+    player.updraft = false;
     for (const z of level.zones) {
-      if (!z.on) continue;
       const b = z.box;
+      if (tick && z.vis === 'smoke') this.effects.drift({ x: (b.minX + b.maxX) / 2 + (Math.random() - 0.5), y: b.minY + 0.3, z: (b.minZ + b.maxZ) / 2 + (Math.random() - 0.5) }, { x: 0, y: 2.5, z: 0 }, 0xe8e8f0, 1.6, 0.3);
+      if (!z.on) { z.wasOn = false; continue; }
+      if (z.type === 'wind' && !z.wasOn) sfx.wind();
+      z.wasOn = true;
+      if (tick && z.vis === 'leaves') {
+        for (let k = 0; k < 2; k++) this.effects.drift({ x: z.f[0] > 0 ? b.minX : z.f[0] < 0 ? b.maxX : b.minX + Math.random() * (b.maxX - b.minX), y: b.minY + Math.random() * (b.maxY - b.minY), z: z.f[2] > 0 ? b.minZ : z.f[2] < 0 ? b.maxZ : b.minZ + Math.random() * (b.maxZ - b.minZ) }, { x: z.f[0] * 1.6, y: 0.3, z: z.f[2] * 1.6 }, Math.random() < 0.5 ? 0xffd166 : 0x9fd36b, 1.2, 0.12);
+      }
+      const inside = p.x + player.hw > b.minX && p.x - player.hw < b.maxX && p.z + player.hw > b.minZ && p.z - player.hw < b.maxZ && p.y < b.maxY && p.y + player.h > b.minY;
+      if (z.type === 'updraft' && inside && !player.grounded && player.gliding !== undefined && this.lastInput?.jumpHeld) {
+        player.vel.y = Math.min(player.vel.y + (26 + z.f[1] * 4) * dt, z.f[1]);
+        player.glideT = 0;
+        player.updraft = true;
+      }
+      if (z.type === 'wind' && inside) {
+        if (z.f[0]) moveAxis(level.world, player, 'x', z.f[0] * dt, false);
+        if (z.f[2]) moveAxis(level.world, player, 'z', z.f[2] * dt, false);
+      }
       if (z.type === 'push' && p.x + player.hw > b.minX && p.x - player.hw < b.maxX && p.z + player.hw > b.minZ && p.z - player.hw < b.maxZ && p.y < b.maxY && p.y + player.h > b.minY) {
         if (z.f[0]) moveAxis(level.world, player, 'x', z.f[0] * dt, false);
         if (z.f[2]) moveAxis(level.world, player, 'z', z.f[2] * dt, false);
@@ -580,6 +617,13 @@ export class Game {
   updateSwitches(paw) {
     const player = this.player;
     for (const sw of this.level.switches) {
+      if (sw.type === 'star') {
+        if (sw.on) continue;
+        let hit = sw.touching(player);
+        if (!hit && paw && !player.pawHits.has(sw) && sphereHitsBox(paw, sw.aabb())) { player.pawHits.add(sw); hit = true; }
+        if (hit) this.pressSwitch(sw, true);
+        continue;
+      }
       if (sw.type === 'plate') {
         const on = sw.standing(player);
         if (on && !sw.on) this.pressSwitch(sw, true);
@@ -596,7 +640,7 @@ export class Game {
   pressSwitch(sw, on) {
     if (!sw.set(on)) return;
     const level = this.level;
-    if (sw.type === 'plate') sfx.plate(); else sfx.button();
+    if (sw.type === 'plate') sfx.plate(); else if (sw.type === 'star') sfx.star(); else sfx.button();
     if (on) {
       this.effects.sparkle({ x: sw.pos.x, y: sw.pos.y + 0.6, z: sw.pos.z }, sw.color.getHex());
       if (sw.bulb) this.effects.sparkle(sw.bulb.position, sw.color.getHex());
@@ -714,16 +758,16 @@ export class Game {
   taskText() {
     const level = this.level, run = this.run, data = this.levelData;
     const ch = level.challenge;
-    if (ch?.running) return ch.type === 'collect' ? `💜 Mor mamalar ${ch.got}/${level.challengeKibble.total}` : ch.type === 'nofloor' ? '🚫 Yere basmadan bayrağa ulaş!' : '⏱️ Mor bayrağa ulaş!';
+    if (ch?.running) return ch.type === 'collect' ? `💜 Mor mamalar ${ch.got}/${level.challengeKibble.total}` : ch.type === 'nofloor' ? '🚫 Yere basmadan bayrağa ulaş!' : ch.type === 'sequence' ? '⭐ Yıldızları takip et!' : '⏱️ Mor bayrağa ulaş!';
     const boss = level.boss;
     if (boss?.alive && boss.started) return boss.spec.task || '👑 Patronu yen!';
     if (run.bell) return '🚪 Kedi kapısına git!';
-    for (const st of data.steps || []) if (!level.groupOn(st.until)) return st.text;
     for (const pz of level.puzzles) {
       if (pz.done) continue;
       const n = this.puzzleCount(pz);
       if (n > 0 || (pz.showWhen && level.groupOn(pz.showWhen))) return `${pz.task} ${n}/${pz.need.length}`;
     }
+    for (const st of data.steps || []) if (!level.groupOn(st.until)) return st.text;
     return data.task || '🔔 Altın çanı bul!';
   }
 

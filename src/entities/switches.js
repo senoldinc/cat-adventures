@@ -31,6 +31,21 @@ export class Switch {
       this.top.add(paw);
       this.paw = paw;
       this.r = 0.85;
+    } else if (this.type === 'star') {
+      // Havada dönen yıldız: dokun ya da pati at → yanar
+      const shape = new THREE.Shape();
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.22 : 0.5;
+        if (i === 0) shape.moveTo(Math.cos(a) * r, Math.sin(a) * r); else shape.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+      }
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.15, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.04, bevelSegments: 1 });
+      geo.center();
+      this.top = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x8a8fb0, emissive: 0xfff1a8, emissiveIntensity: 0.15, roughness: 0.4, flatShading: true }));
+      this.top.position.y = 0.6;
+      this.g.add(this.top);
+      this.halo = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.75, 20), new THREE.MeshBasicMaterial({ color: 0xfff1a8, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+      this.halo.position.y = 0.6;
+      this.g.add(this.halo);
     } else if (this.type === 'valve') {
       // Vana: kaide + boru + üstte kırmızı çark. Pati ya da üstüne zıplama çevirir.
       const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 0.5, 12), mat(0xc7ccd6, { metalness: 0.5, roughness: 0.35 }));
@@ -94,6 +109,12 @@ export class Switch {
     return { minX: p.x - 0.55, maxX: p.x + 0.55, minY: p.y, maxY: p.y + 0.9, minZ: p.z - 0.55, maxZ: p.z + 0.55 };
   }
 
+  // Yıldız: kedinin gövdesi yıldıza değiyor mu?
+  touching(player) {
+    const p = player.pos;
+    return (p.x - this.pos.x) ** 2 + (p.y + 0.3 - this.pos.y - 0.6) ** 2 + (p.z - this.pos.z) ** 2 < 1.1 * 1.1;
+  }
+
   // Oyuncu plakanın üstünde duruyor mu?
   standing(player) {
     const p = player.pos;
@@ -106,6 +127,7 @@ export class Switch {
     this.pressT = on ? 0.25 : 0;
     if (on) this.spinT = 2.5;
     this.top.material.emissiveIntensity = on ? 0.9 : 0.12;
+    if (this.type === 'star') { this.top.material.color.setHex(on ? 0xffd447 : 0x8a8fb0); this.top.material.emissiveIntensity = on ? 1.2 : 0.15; }
     if (this.bulbMat) {
       this.bulbMat.emissiveIntensity = on ? 1.6 : 0;
       this.bulbMat.color.copy(on ? this.color : this.color.clone().multiplyScalar(0.35));
@@ -117,6 +139,12 @@ export class Switch {
     this.pressT = Math.max(0, this.pressT - dt);
     if (this.type === 'plate') {
       this.top.position.y = this.on ? 0.05 : 0.1;
+    } else if (this.type === 'star') {
+      this.top.rotation.y += dt * (this.on ? 4 : 1.5);
+      this.top.position.y = 0.6 + Math.sin(t * 2) * 0.12;
+      this.halo.rotation.y = this.top.rotation.y;
+      this.halo.scale.setScalar(this.on ? 1.4 + Math.sin(t * 6) * 0.1 : 1 + Math.sin(t * 3) * 0.08);
+      this.halo.material.opacity = this.on ? 0.7 : 0.3;
     } else if (this.type === 'valve') {
       if (this.spinT > 0) { this.spinT -= dt; this.wheel.rotation.y += dt * 6; }
       if (!this.on) this.top.material.emissiveIntensity = 0.12 + (Math.sin(t * 4) + 1) * 0.25;

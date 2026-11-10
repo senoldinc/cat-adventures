@@ -1,0 +1,143 @@
+{
+  "id": "cati",
+  "name": "Çatı",
+  "emoji": "🌙",
+  "spawn": [0, 6, 2],
+  "spawnYaw": 0,
+  "killY": 1,
+  "task": "🔔 Altın çan çanak antende!",
+  "steps": [
+    { "until": "moonbridge", "text": "⭐ Çatıdaki 3 yıldızı yak!" }
+  ],
+  "theme": {
+    "outdoor": true,
+    "night": true,
+    "fenceH": 1.2,
+    "floor": "#26304a",
+    "floorLine": "#1d263c",
+    "floorTex": "grass",
+    "farGround": "#1d2a3a",
+    "wall": "#3a3550",
+    "wallStripe": "#2a2540",
+    "sky": "#1b2340",
+    "music": "night"
+  },
+  "room": { "minX": -12, "maxX": 12, "minZ": 0, "maxZ": 66, "height": 16 },
+  "roofs": [
+    { "z0": 0, "z1": 8, "ridge": 6, "gutter": 3.6 },
+    { "z0": 14, "z1": 24, "ridge": 6, "gutter": 3.6 },
+    { "z0": 32, "z1": 66, "ridge": 6, "gutter": 3.6 }
+  ],
+  "boxes": [
+    { "p": [6, 3.75, 4], "s": [3, 7.5, 3], "look": "dormer" },
+    { "p": [0, 5.85, 11], "s": [0.6, 0.3, 6], "c": "#c98a55", "w": 1 },
+
+    { "p": [-5, 3.75, 17], "s": [2, 7.5, 2], "look": "chimney" },
+    { "p": [-9, 12.35, 17], "s": [2.2, 0.3, 2.2], "look": "nest" },
+
+    { "p": [0.8, 5.85, 25.2], "s": [1.6, 0.3, 1.6], "t": "crumble", "look": "crumble" },
+    { "p": [-0.8, 5.85, 27.4], "s": [1.6, 0.3, 1.6], "t": "crumble", "look": "crumble" },
+    { "p": [0.8, 5.85, 29.6], "s": [1.6, 0.3, 1.6], "t": "crumble", "look": "crumble" },
+    { "p": [-0.6, 5.85, 31.4], "s": [1.6, 0.3, 1.6], "t": "crumble", "look": "crumble" },
+
+    { "p": [-6, 3.8, 37.85], "s": [3, 7.6, 0.7], "look": "chimneywall" },
+    { "p": [-6, 3.8, 40.15], "s": [3, 7.6, 0.7], "look": "chimneywall" },
+    { "p": [-7.15, 3.8, 39], "s": [0.7, 7.6, 1.6], "look": "chimneywall" },
+    { "p": [-4.85, 3.8, 39], "s": [0.7, 7.6, 1.6], "t": "climb", "look": "chimneywall" },
+
+    { "p": [10.5, 4.75, 41], "s": [3, 9.5, 10], "look": "chimney" },
+
+    { "p": [7.2, 10.15, 47.8], "s": [1.8, 0.3, 1.8], "look": "moontile", "g": "moonbridge", "off": true },
+    { "p": [4.4, 10.95, 50], "s": [1.8, 0.3, 1.8], "look": "moontile", "g": "moonbridge", "off": true },
+    { "p": [1.4, 11.75, 52], "s": [1.8, 0.3, 1.8], "look": "moontile", "g": "moonbridge", "off": true },
+    { "p": [-1.6, 12.45, 54], "s": [1.8, 0.3, 1.8], "look": "moontile", "g": "moonbridge", "off": true },
+    { "p": [-5.75, 12.85, 56.5], "s": [4.5, 0.3, 4.5], "look": "dish" }
+  ],
+  "movers": [
+    { "orbit": [6, 7.3, 40], "r": 2.5, "speed": 0.5, "phase": 0, "plane": "xz", "s": [1.6, 0.3, 1.6], "look": "scoop" },
+    { "orbit": [6, 7.3, 40], "r": 2.5, "speed": 0.5, "phase": 1.5708, "plane": "xz", "s": [1.6, 0.3, 1.6], "look": "scoop" },
+    { "orbit": [6, 7.3, 40], "r": 2.5, "speed": 0.5, "phase": 3.1416, "plane": "xz", "s": [1.6, 0.3, 1.6], "look": "scoop" },
+    { "orbit": [6, 7.3, 40], "r": 2.5, "speed": 0.5, "phase": 4.7124, "plane": "xz", "s": [1.6, 0.3, 1.6], "look": "scoop" }
+  ],
+  "zones": [
+    { "type": "wind", "p": [0, 7.2, 11], "s": [3, 2.4, 5], "f": [4, 0, 0], "period": [2, 3], "vis": "leaves" },
+    { "type": "updraft", "p": [-5, 11, 17], "s": [2.4, 7, 2.4], "f": [0, 4, 0], "vis": "smoke" }
+  ],
+  "switches": [
+    { "id": "s1", "type": "star", "p": [-11.1, 3.6, 46] },
+    { "id": "s2", "type": "star", "p": [10.2, 9.5, 37.2] },
+    { "id": "s3", "type": "star", "p": [6, 7.5, 4] }
+  ],
+  "puzzles": [
+    { "id": "moon", "need": ["s1", "s2", "s3"], "targets": [["moonbridge", true]], "task": "⭐ Yıldızlar", "toast": "🌉 Ay Köprüsü çıktı! Üst çatıdan antene yürü!" }
+  ],
+  "props": [
+    { "type": "vanepole", "p": [6, 4.5, 40], "h": 2.4 },
+    { "type": "antenna", "p": [11.2, 9.5, 44.5], "h": 3 },
+    { "type": "antenna", "p": [-10, 4.0, 60], "h": 4 }
+  ],
+  "kibble": [
+    { "line": [[0, 6.6, 3.5], [0, 6.6, 7]], "n": 4 },
+    { "line": [[3, 5.9, 2], [3, 5.9, 7]], "n": 4 },
+    { "line": [[0, 6.7, 9], [0, 6.7, 13]], "n": 5 },
+    { "line": [[-2, 6, 15], [-2, 6, 23]], "n": 6 },
+    { "line": [[-5, 8.4, 17], [-5, 13.5, 17]], "n": 5 },
+    { "arc": [[-5, 14, 17], [-9, 13, 17]], "h": 0.6, "n": 3 },
+    { "line": [[4, 5.6, 15], [8, 5.2, 22]], "n": 5 },
+    [0.8, 6.6, 25.2], [-0.8, 6.6, 27.4], [0.8, 6.6, 29.6], [-0.6, 6.6, 31.4],
+    { "line": [[0, 6.6, 33], [0, 6.6, 64]], "n": 14 },
+    { "ring": [-6, 8.2, 39], "r": 1.9, "n": 6 },
+    { "ring": [6, 8, 40], "r": 2.5, "n": 8 },
+    { "line": [[10.5, 10.1, 38], [10.5, 10.1, 45]], "n": 4 },
+    [7.2, 10.8, 47.8], [4.4, 11.6, 50], [1.4, 12.4, 52], [-1.6, 13.1, 54],
+    { "line": [[-11.1, 4.2, 34], [-11.1, 4.2, 44]], "n": 6 },
+    { "line": [[11.1, 4.2, 48], [11.1, 4.2, 64]], "n": 8 },
+    { "line": [[-5, 5.6, 48], [-5, 5.6, 64]], "n": 6 },
+    { "ring": [6, 8.1, 4], "r": 1.1, "n": 5 }
+  ],
+  "bones": [
+    [-9, 13.1, 17],
+    [-6, 5.6, 39],
+    [11.1, 4.3, 22]
+  ],
+  "bell": [-5.75, 13.7, 56.5],
+  "door": { "p": [0, 7, 65.85], "s": [2.2, 2, 0.3] },
+  "checkpoints": [
+    [0, 6, 20],
+    [0, 6, 34],
+    [0, 6, 48]
+  ],
+  "enemies": [
+    { "type": "owl", "path": [[2, 7.2, 15], [8, 7.2, 21]], "speed": 0.7 },
+    { "type": "owl", "path": [[-4, 8, 47], [3, 8, 53]], "speed": 0.6 },
+    { "type": "spider", "p": [5, 0, 60], "minY": 6.4, "maxY": 9, "speed": 0.8 }
+  ],
+  "hints": [
+    { "p": [0, 6, 3], "icon": "🌙", "text": "Gece çatısı! 3 yıldızı yakınca Ay Köprüsü çıkar." },
+    { "p": [0, 6, 7.2], "icon": "🍃", "text": "Rüzgâr esince dur, dinince kalastan koş!" },
+    { "p": [4.2, 4.75, 4], "icon": "⭐", "text": "Çatı penceresinin üstündeki yıldıza dokun!" },
+    { "p": [-3.2, 5.25, 17], "icon": "💨", "text": "Bacaya çık, zıplamayı basılı tut: duman seni yükseltir!" },
+    { "p": [0, 6, 23.4], "icon": "🧱", "text": "Çatlak kiremitler çöker: durmadan geç!" },
+    { "p": [-3.4, 5.25, 39], "icon": "🦴", "text": "Bacanın içine bak! Duvarına tırmanıp çık." },
+    { "p": [2.8, 5.5, 40], "icon": "🌀", "text": "Rüzgâr gülüne bin, üst çatıya zıpla!" },
+    { "p": [9.6, 9.5, 45.4], "icon": "🌉", "text": "Ay Köprüsü buradan antene uzanır." },
+    { "p": [-9.6, 3.6, 46], "icon": "⭐", "text": "Oluğun ucunda bir yıldız var!" },
+    { "p": [10.5, 9.5, 40.8], "icon": "⏱️", "text": "Zor Parkur! Halkaya bas: yıldız yolu!" }
+  ],
+  "challenge": {
+    "type": "sequence",
+    "start": [10.5, 9.5, 39.6],
+    "timeLimit": 30,
+    "reward": "cape_star",
+    "platforms": [
+      { "p": [10.5, 9.95, 48.6], "s": [2, 0.3, 2] },
+      { "p": [8, 10.45, 51.2], "s": [2, 0.3, 2] },
+      { "p": [10.5, 10.95, 53.8], "s": [2, 0.3, 2] },
+      { "p": [8, 11.45, 56.4], "s": [2, 0.3, 2] },
+      { "p": [10.5, 11.95, 59], "s": [2, 0.3, 2] },
+      { "p": [8, 12.45, 61.6], "s": [2, 0.3, 2] },
+      { "p": [10.2, 12.95, 64], "s": [2.4, 0.3, 2.4] }
+    ],
+    "goal": [10.2, 13.1, 64]
+  }
+}

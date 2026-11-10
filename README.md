@@ -34,7 +34,8 @@ Ekran tuşları dokunmatik cihazlarda otomatik açılır; Ayarlar → "📱 Ekra
 | 🍳 Mutfak | Kırmızı plaka → çekmeceler, tost makinesi, tencere kapağı asansörü, 3 düğme → tabak köprüsü, **boss: Kral Fare** | Aşçı Şapkası (Mama Yağmuru) |
 | 🛁 Banyo | Kaygan köpük, havlu tırmanışı, tuvalet kâğıdı bandı, aralıklı musluk, vana → küvet dolar ve ördekler yükselir, çamaşır tamburu, kapıya kaydırak | Yüzücü Gözlüğü (Yere Basma!) |
 | 🌻 Bahçe | Çit üstünde denge, süpüren fıskiye, köstebek tüneli, ayçiçeği zıplatıcı, uyuyan köpek (💤 iken geç, 👀 iken dur), sulayınca büyüyen çiçekler → ağaç evi, **boss: Dev Köstebek** | Hasır Şapka (Çit Yarışı) |
-| 🌙 Çatı · 🔦 Bodrum | Yapım aşamasında | |
+| 🌙 Çatı | Gece; eğimli kiremitler, rüzgârlı kalas, bacanın dumanında yükselme, çöken kiremitler, baca içinde kemik, rüzgâr gülü, 3 yıldız → Ay Köprüsü | Yıldızlı Pelerin (Yıldız Yolu) |
+| 🔦 Bodrum | Yapım aşamasında | |
 
 Dev Köstebek: toprak titreyen tümseğe koş, çıkınca pati at ya da üstüne zıpla; kırmızı halkalara toprak topu düşer.
 Kral Fare: "!" gösterip koşar; kenara kaç, duvara toslasın. Sersemleyince üstüne zıpla (ya da pati at). 3 vuruşta yenilir, çan ortaya çıkar.
@@ -51,13 +52,16 @@ Diğer alanlar:
 - `water`: `id`, `g` (grup açılınca yükselir), `rise`, `riseTime`.
 - `zones`: `{ type: "push", p, s, f: [fx,fy,fz], period: [açık, kapalı], vis: "stream"|"spray", sweep: { from, to, speed } }` → içindekini iter (sweep ile gidip gelir).
 - `tunnels`: `[{ a: [x,y,z], b: [x,y,z] }]` → iki delik arasında ışınlanma.
+- `roofs`: `[{ z0, z1, ridge, gutter }]` → sırttan oluğa basamaklı eğimli çatı üretir; `"t": "crumble"` → basınca çöken kiremit.
+- `zones` türleri: `push`, `wind` (aralıklı, `vis: "leaves"`), `updraft` (süzülürken yükseltir, `vis: "smoke"`).
+- `switches` `type: "star"` → dokununca yanar; `theme.night` → gece ışığı, yıldızlar ve ay.
 - `"grow": true` → gruptaki kutu açılınca yerden büyüyerek çıkar.
 - `theme.outdoor` → tavan yok, alçak çit, uzak ağaçlar ve bulutlar; `floorTex: "grass"`.
-- Düşmanlar: `vacuum`, `mouse`, `spider`, `roamer`, `soap`, `dog` (`area`, `sleep`, `pushZ`). Boss: `kingmouse`, `mole` (`holes`, `respawn`).
+- Düşmanlar: `vacuum`, `mouse`, `spider`, `roamer`, `soap`, `owl`, `dog` (`area`, `sleep`, `pushZ`). Boss: `kingmouse`, `mole` (`holes`, `respawn`).
 - `switches`: `plate` (üstüne bas), `button` ya da `valve` (pati/üstüne zıpla); `targets: [["grup", true]]`, `bulb` ile yanan ampul.
 - `puzzles`: `need` listesindeki tüm anahtarlar basılınca `targets` açılır; görev satırında sayaç gösterir.
 - `steps`: `{ until: "grup", text }` — grup açılana kadar görev satırında gösterilir.
 - `boss`: `{ type: "kingmouse", p, arena: [x0,z0,x1,z1], name, intro, tip, task, outro }` + `"bellHidden": true`.
-- `challenge.type`: `race` (mor bayrağa ulaş), `collect` (`items` listesindeki mor mamaları topla) ya da `nofloor` (yere basmadan bayrağa ulaş).
+- `challenge.type`: `race` (mor bayrağa ulaş), `collect` (`items` listesindeki mor mamaları topla) `nofloor` (yere basmadan bayrağa ulaş) ya da `sequence` (platformlar basıldıkça sırayla belirir).
 - `door.p` yüksekse kapı o yükseklikte bir çıkıntıda durur.
 Konsoldan test: `__game.simulate(60, { moveY: 1, jumpPressed: true })` (pati için `pawPressed: true`).

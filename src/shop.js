@@ -26,6 +26,7 @@ export const ITEMS = [
   { id: 'fur_black', slot: 'fur', name: 'Kara', price: 40, color: FURS.fur_black.main },
   { id: 'fur_cream', slot: 'fur', name: 'Krem', price: 40, color: FURS.fur_cream.main },
   { id: 'fur_lilac', slot: 'fur', name: 'Lila', price: 80, color: FURS.fur_lilac.main },
+  { id: 'cape_star', slot: 'special', name: 'Yıldızlı Pelerin', icon: '✨', price: null, reward: 'Çatı Zor Parkuru' },
   { id: 'cape_red', slot: 'special', name: 'Kırmızı Pelerin', icon: '🦸', price: null, reward: 'Salon Zor Parkuru' },
 ];
 

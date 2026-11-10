@@ -349,6 +349,21 @@ export function buildAccessory(id) {
       g.add(mesh(new THREE.BoxGeometry(0.3, 0.02, 0.02), dark, 0, 0.035, 0.025));
       break;
     }
+    case 'cape_star': {
+      const geo = new THREE.PlaneGeometry(0.42, 0.55, 1, 3);
+      geo.translate(0, -0.275, 0);
+      g.position.set(0, 0.1, 0.13);
+      g.rotation.x = 1.35;
+      const cloth = mesh(geo, new THREE.MeshStandardMaterial({ color: 0x23306b, side: THREE.DoubleSide, flatShading: true }));
+      g.add(cloth);
+      for (let i = 0; i < 5; i++) {
+        const st = new THREE.Mesh(new THREE.OctahedronGeometry(0.03, 0), new THREE.MeshBasicMaterial({ color: 0xffd447 }));
+        st.position.set(((i * 0.37) % 1 - 0.5) * 0.3, -0.08 - i * 0.09, 0.01);
+        g.add(st);
+      }
+      g.add(mesh(ico(0.04, 0), mat(0xffd447), 0, 0.01, 0.03));
+      break;
+    }
     case 'cape_red': {
       // Boyundan sırta sarkan pelerin; CatModel.update içinde rotation.x ile dalgalanır
       const geo = new THREE.PlaneGeometry(0.42, 0.55, 1, 3);

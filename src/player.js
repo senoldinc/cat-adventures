@@ -193,7 +193,8 @@ export class Player {
     const glideMax = helper ? 4 : 1.8;
     const glideFall = helper ? 1.0 : 1.8;
     const wasGliding = this.gliding;
-    this.gliding = !this.grounded && input.jumpHeld && v.y <= 0 && this.glideT < glideMax;
+    // Baca hava akımında (updraft) yükselirken de süzülme duruşu sürer
+    this.gliding = !this.grounded && input.jumpHeld && (v.y <= 0 || this.updraft) && this.glideT < glideMax;
     if (this.gliding && !wasGliding) this.emit('glide');
 
     // Yerçekimi

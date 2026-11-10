@@ -529,7 +529,69 @@ class Dog extends Enemy {
   }
 }
 
+// Baykuş — iki nokta arasında kanat çırparak süzülür (gece çatısı)
+class Owl extends Enemy {
+  constructor(scene, spec) {
+    super(scene, spec);
+    this.hw = 0.45; this.h = 0.7;
+    const brown = mat(0x8a6a5a), cream = mat(0xf4e3c8);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 8), brown);
+    body.scale.set(1, 1.15, 0.9);
+    body.position.y = 0.4;
+    this.model.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), cream);
+    belly.position.set(0, 0.32, 0.2);
+    belly.scale.set(1, 1.1, 0.6);
+    this.model.add(belly);
+    for (const s of [-1, 1]) {
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(0.15, 10), cream);
+      disc.position.set(0.15 * s, 0.6, 0.36);
+      this.model.add(disc);
+      const ey = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd447 }));
+      ey.position.set(0.15 * s, 0.6, 0.38);
+      this.model.add(ey);
+      const pu = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 4), mat(0x111111));
+      pu.position.set(0.15 * s, 0.6, 0.45);
+      this.model.add(pu);
+      const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.2, 4), brown);
+      tuft.position.set(0.22 * s, 0.9, 0.05);
+      tuft.rotation.z = -0.4 * s;
+      this.model.add(tuft);
+    }
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 4), mat(0xffa94d));
+    beak.position.set(0, 0.5, 0.42);
+    beak.rotation.x = Math.PI / 2 + 0.4;
+    this.model.add(beak);
+    this.wings = [-1, 1].map((s) => {
+      const w = new THREE.Group();
+      w.position.set(0.38 * s, 0.5, 0);
+      const f = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), brown);
+      f.scale.set(1.3, 0.25, 0.7);
+      f.position.x = 0.3 * s;
+      w.add(f);
+      this.model.add(w);
+      return { w, s };
+    });
+    this.a = new THREE.Vector3(...spec.path[0]);
+    this.b = new THREE.Vector3(...spec.path[1]);
+    this.pos.copy(this.a);
+    this.finish();
+  }
+  update(dt, speedK) {
+    this.t += dt * speedK;
+    const u = (Math.sin(this.t * this.spec.speed) + 1) / 2;
+    const px = this.pos.x, pz = this.pos.z;
+    this.pos.lerpVectors(this.a, this.b, u);
+    this.pos.y += Math.sin(u * Math.PI) * 0.8;
+    const dx = this.pos.x - px, dz = this.pos.z - pz;
+    if (Math.abs(dx) + Math.abs(dz) > 1e-5) this.g.rotation.y = Math.atan2(dx, dz);
+    this.g.position.copy(this.pos);
+    for (const { w, s } of this.wings) w.rotation.z = Math.sin(this.t * 12) * 0.7 * s;
+  }
+}
+
 export function createEnemy(scene, spec, world) {
+  if (spec.type === 'owl') return new Owl(scene, spec);
   if (spec.type === 'dog') return new Dog(scene, spec, world);
   if (spec.type === 'soap') return new Soap(scene, spec);
   if (spec.type === 'roamer') return new Roamer(scene, spec, world);

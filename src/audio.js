@@ -152,6 +152,10 @@ export const sfx = {
   pop() { tone({ type: 'square', f0: 200, f1: 600, dur: 0.12, vol: 0.1 }); noise({ dur: 0.2, vol: 0.15, freq: 400, q: 0.7 }); },
   throw() { noise({ dur: 0.25, vol: 0.1, freq: 800, f1: 2000, q: 1.2 }); },
   splat() { noise({ dur: 0.18, vol: 0.18, freq: 300, type: 'lowpass' }); tone({ type: 'sine', f0: 160, f1: 80, dur: 0.12, vol: 0.15 }); },
+  wind() { noise({ dur: 1.6, vol: 0.12, freq: 400, f1: 900, q: 0.6 }); },
+  crack() { [0, 0.1, 0.22].forEach((d) => noise({ dur: 0.05, vol: 0.12, freq: 1800, q: 2, delay: d })); },
+  crumble() { noise({ dur: 0.4, vol: 0.2, freq: 500, f1: 150, q: 0.8 }); },
+  star() { [1319, 1568, 2093].forEach((f, i) => tone({ type: 'triangle', f0: f, dur: 0.3, vol: 0.12, delay: i * 0.07 })); },
   victory() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => { tone({ type: 'triangle', f0: f, dur: 0.35, vol: 0.15, delay: i * 0.1 }); tone({ type: 'square', f0: f / 2, dur: 0.2, vol: 0.04, delay: i * 0.1 }); }); },
 };
 
@@ -161,6 +165,7 @@ const TRACKS = {
   kitchen: { root: 293.66, bpm: 116, pattern: [0, 4, 2, 4, 1, 4, 3, 4], chords: [0, 5, 0, 7], wave: 'triangle', vol: 0.11 },
   bath: { root: 329.63, bpm: 100, pattern: [4, 2, 0, 2, 4, 4, 3, 1], chords: [0, 5, 3, 7], wave: 'sine', vol: 0.15 },
   garden: { root: 349.23, bpm: 104, pattern: [0, 1, 2, 4, 2, 1, 3, 4], chords: [0, 5, 7, 5], wave: 'triangle', vol: 0.12 },
+  night: { root: 261.63, bpm: 76, pattern: [4, 2, 1, 0, 2, 1, 0, 1], chords: [0, 5, 3, 4], wave: 'sine', vol: 0.15 },
   boss: { root: 220, bpm: 138, pattern: [0, 0, 3, 0, 4, 3, 2, 1], chords: [0, 0, 5, 7], wave: 'square', vol: 0.05 },
 };
 let track = TRACKS.salon;
