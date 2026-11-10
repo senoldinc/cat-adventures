@@ -7,6 +7,7 @@ export const FURS = {
   fur_black: { main: 0x2f2a2e, accent: 0xffffff, stripe: 0x1d1a1c },
   fur_cream: { main: 0xf6e3c2, accent: 0xffffff, stripe: 0xe2c696 },
   fur_lilac: { main: 0xc6a3e8, accent: 0xfff0ff, stripe: 0x9c78c8 },
+  fur_gold: { main: 0xffc23d, accent: 0xfff3c0, stripe: 0xe09a1a },
 };
 
 const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.75, ...extra });
@@ -287,6 +288,16 @@ export function buildAccessory(id) {
         g.add(mesh(new THREE.ConeGeometry(0.04, 0.09, 4), gold, Math.sin(a) * 0.12, 0.13, Math.cos(a) * 0.12));
         g.add(mesh(ico(0.022, 0), mat(i % 2 ? 0xff4d6d : 0x4dc3ff), Math.sin(a) * 0.13, 0.05, Math.cos(a) * 0.13));
       }
+      break;
+    }
+    case 'hat_miner': {
+      const yellow = mat(0xffd23d, { roughness: 0.4 });
+      g.add(mesh(new THREE.SphereGeometry(0.17, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), yellow, 0, 0.02, 0));
+      g.add(mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.025, 14), yellow, 0, 0.02, 0.02));
+      g.add(mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.06, 10), mat(0x555555), 0, 0.1, 0.16));
+      const lamp = new THREE.Mesh(new THREE.CircleGeometry(0.045, 10), new THREE.MeshBasicMaterial({ color: 0xfff6c8 }));
+      lamp.position.set(0, 0.1, 0.195);
+      g.add(lamp);
       break;
     }
     case 'hat_straw': {

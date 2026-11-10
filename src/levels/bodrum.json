@@ -1,0 +1,156 @@
+{
+  "id": "bodrum",
+  "name": "Bodrum",
+  "emoji": "🔦",
+  "final": true,
+  "spawn": [0, 0, 2.5],
+  "spawnYaw": 0,
+  "killY": -5,
+  "task": "🤖 Kazan dairesine git: Süpürge 3000!",
+  "steps": [
+    { "until": "lampA", "text": "💡 Sarı düğmeyle ışıkları yak!" }
+  ],
+  "theme": {
+    "dark": true,
+    "floor": "#7a7480",
+    "floorLine": "#5f5a66",
+    "floorTex": "tile",
+    "wall": "#6a5e70",
+    "wallStripe": "#4e4456",
+    "wallTex": "tile",
+    "ceiling": "#3a3440",
+    "sky": "#120e18",
+    "music": "cellar"
+  },
+  "room": { "minX": -12, "maxX": 12, "minZ": 0, "maxZ": 66, "height": 10 },
+  "boxes": [
+    { "p": [-9.85, 2.6, 12], "s": [0.3, 4.6, 2], "t": "climb", "look": "web" },
+    { "p": [-11, 5.15, 12], "s": [2, 0.3, 3], "look": "shelf" },
+    { "p": [6, 0.6, 14], "s": [1.2, 1.2, 1.2], "look": "crate" },
+    { "p": [7.2, 0.6, 14], "s": [1.2, 1.2, 1.2], "look": "crate" },
+    { "p": [6.6, 1.8, 14], "s": [1.2, 1.2, 1.2], "look": "crate" },
+
+    { "p": [0, 1.35, 26], "s": [2.4, 0.3, 9.4], "conv": [0, 3.5], "look": "belt" },
+    { "p": [-6, 1.35, 26], "s": [2.4, 0.3, 9.4], "conv": [0, -2.5], "look": "belt" },
+
+    { "p": [11, 3.45, 34], "s": [2, 0.3, 3], "look": "shelf" },
+    { "p": [0, 5, 44.5], "s": [24, 10, 0.5], "look": "grate", "g": "grate" },
+    { "p": [0, 5, 45.2], "s": [24, 10, 0.5], "look": "grate", "g": "gate", "off": true }
+  ],
+  "water": [
+    { "p": [0, 0.15, 26], "s": [24, 0.3, 8], "c": "#2b2b30", "msg": "🖤 Kömür tozu! Hapşu! Banda bin." }
+  ],
+  "crates": [
+    { "p": [-6, 0.6, 36.4] },
+    { "p": [3.6, 0.6, 38.8] },
+    { "p": [7.2, 0.6, 34] }
+  ],
+  "lights": [
+    { "p": [0, 8, 8], "g": "lampA", "i": 14 },
+    { "p": [-6, 8, 15], "g": "lampA", "i": 12 },
+    { "p": [0, 8, 28], "g": "lampB", "i": 12 },
+    { "p": [0, 8, 38], "g": "lampB", "i": 14 },
+    { "p": [-8, 8, 40], "g": "lampB", "i": 10 },
+    { "p": [-6, 8, 52], "g": "lampC", "i": 18, "r": 20 },
+    { "p": [6, 8, 52], "g": "lampC", "i": 18, "r": 20 },
+    { "p": [0, 8, 61], "g": "lampC", "i": 18, "r": 20, "c": "#ffc890" }
+  ],
+  "switches": [
+    { "id": "lightA", "type": "button", "p": [3, 0, 5], "c": "#ffd23d", "targets": [["lampA", true]], "toast": "💡 Işıklar yandı!" },
+    { "id": "lightB", "type": "button", "p": [-3, 0, 31.6], "c": "#5cc96b", "targets": [["lampB", true]], "toast": "💡 Depo aydınlandı!" },
+    { "id": "reset", "type": "button", "p": [0, 0, 34.6], "c": "#9aa3ad", "reset": true },
+    { "id": "p1", "type": "plate", "p": [-6, 0, 38.8], "c": "#3f8efc", "hold": true },
+    { "id": "p2", "type": "plate", "p": [6, 0, 38.8], "c": "#3f8efc", "hold": true }
+  ],
+  "puzzles": [
+    { "id": "grate", "need": ["p1", "p2"], "targets": [["grate", false]], "task": "🟦 Plakalar", "showWhen": "lampB", "toast": "🟦 Izgara açıldı! Kazan dairesine gir!" }
+  ],
+  "props": [
+    { "type": "sack", "p": [-8, 0, 4] },
+    { "type": "sack", "p": [9, 0, 30.6] },
+    { "type": "bike", "p": [9.5, 0, 7], "rot": 20 },
+    { "type": "pipes", "p": [-11.6, 6, 30], "len": 24 },
+    { "type": "pipes", "p": [11.6, 6.5, 54], "len": 22 },
+    { "type": "boiler", "p": [-9.8, 0, 63.5] },
+    { "type": "jar", "p": [9.5, 0, 46.5] },
+    { "type": "frame", "p": [0, 5, 0.05], "rot": 0, "c": "#ffd166" }
+  ],
+  "kibble": [
+    { "line": [[0, 0.5, 4], [0, 0.5, 8]], "n": 4 },
+    { "ring": [3, 1.2, 5], "r": 0.9, "n": 4 },
+    { "line": [[-9.4, 1, 12], [-9.4, 4.4, 12]], "n": 4 },
+    { "line": [[4, 0.5, 9], [8, 0.5, 18]], "n": 5 },
+    { "line": [[-4, 0.5, 6], [-4, 0.5, 18]], "n": 6 },
+    { "ring": [6.6, 3, 14], "r": 0.7, "n": 4 },
+    { "line": [[0, 2.1, 22], [0, 2.1, 30]], "n": 7 },
+    { "line": [[-6, 2.1, 22], [-6, 2.1, 30]], "n": 7 },
+    { "ring": [-3, 1.2, 31.6], "r": 0.9, "n": 4 },
+    { "line": [[-6, 0.5, 33], [-6, 0.5, 35]], "n": 2 },
+    [7.2, 1.8, 34],
+    { "line": [[-10, 0.5, 36], [-10, 0.5, 43]], "n": 5 },
+    { "line": [[10, 0.5, 37], [10, 0.5, 43]], "n": 4 },
+    { "ring": [0, 0.5, 55], "r": 4, "n": 10 },
+    { "line": [[-9, 0.5, 49], [-9, 0.5, 60]], "n": 6 },
+    { "line": [[9, 0.5, 49], [9, 0.5, 62]], "n": 6 }
+  ],
+  "bones": [
+    [-11, 5.9, 12],
+    [11, 4.2, 34],
+    [6.6, 3.0, 14]
+  ],
+  "bell": [0, 1.3, 57],
+  "bellHidden": true,
+  "door": { "p": [0, 1, 65.85], "s": [2.2, 2, 0.3] },
+  "checkpoints": [
+    [0, 0, 20],
+    [3, 0, 31.8]
+  ],
+  "boss": {
+    "type": "supervacuum",
+    "name": "🤖 Süpürge 3000",
+    "p": [0, 0, 57],
+    "arena": [-8, 48, 8, 62],
+    "respawn": [0, 0, 47],
+    "lightsOn": ["lampC"],
+    "intro": "🤖 Süpürge 3000! Bip bip yanınca kaç, sersemleyince üstüne zıpla!",
+    "tip": "🦶 Süpürge 3000'e pati işlemez: sersemleyince üstüne zıpla!",
+    "task": "🤖 Sersemleyince üstüne zıpla!",
+    "outro": "🎉 Süpürge 3000 sustu! Altın çanı al, kapıya koş!"
+  },
+  "enemies": [
+    { "type": "roamer", "area": [2, 9, 9, 18] },
+    { "type": "spider", "p": [-4, 0, 41], "minY": 1.4, "maxY": 4.5, "speed": 0.9 },
+    { "type": "spider", "p": [9, 0, 42], "minY": 1.4, "maxY": 4, "speed": 0.8 }
+  ],
+  "hints": [
+    { "p": [0, 0, 3], "icon": "🔦", "text": "Bodrum karanlık! Fenerin önünü aydınlatır." },
+    { "p": [3, 0, 6.8], "icon": "💡", "text": "Sarı düğmeye F ile pati at: ışıklar yansın!", "touch": "Sarı düğmeye B ile pati at: ışıklar yansın!" },
+    { "p": [-8.6, 0, 12], "icon": "🕸️", "text": "Örümcek ağına doğru yürü: tırman!" },
+    { "p": [6.6, 0, 16], "icon": "📦", "text": "Sandık yığınına zıpla, tepede kemik var!" },
+    { "p": [0, 0, 20.8], "icon": "⚫", "text": "Kömür çukuru! Banda zıpla, seni taşır." },
+    { "p": [-3, 0, 30.2], "icon": "💡", "text": "Yeşil düğme depo ışıklarını yakar!" },
+    { "p": [-6, 0, 35], "icon": "📦", "text": "Sandığa pati at: kayar! Mavi plakaya koy." },
+    { "p": [0, 0, 33.4], "icon": "🔄", "text": "Sandık sıkıştı mı? Gri düğme hepsini geri getirir." },
+    { "p": [7.2, 0, 32.6], "icon": "🦴", "text": "Sandığa çık, raftaki kemiğe zıpla!" },
+    { "p": [0, 0, 43.4], "icon": "🟦", "text": "İki mavi plakaya da sandık koy: ızgara açılır!" },
+    { "p": [8, 0, 17.6], "icon": "⏱️", "text": "Zor Parkur! Fenerle mor mamaları bul." }
+  ],
+  "challenge": {
+    "type": "collect",
+    "start": [8, 0, 19],
+    "timeLimit": 45,
+    "reward": "hat_miner",
+    "items": [
+      [-6, 2.0, 23.5],
+      [-6, 2.0, 29],
+      [0, 2.0, 24.5],
+      [0, 2.0, 29.5],
+      [8, 0.6, 32.5],
+      [-9, 0.6, 35.5],
+      [9, 0.6, 42.5],
+      [-9, 0.6, 42.5],
+      [0, 0.6, 41.5],
+      [11, 4.3, 34]
+    ]
+  }
+}

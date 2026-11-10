@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { mat } from '../props.js';
 import { moveAxis } from '../physics.js';
-import { Enemy, buildMouse, alertSprite, dizzyStars } from './enemies.js';
+import { Enemy, buildMouse, alertSprite, dizzyStars, eye, bubbleSprite } from './enemies.js';
 
 export class Boss extends Enemy {
   constructor(scene, spec, world) {
@@ -514,7 +514,228 @@ export class Mole extends Boss {
   }
 }
 
+// Süpürge 3000 — final. Can 3: koşu → duvara tosla. Can 2: fırça fırıldağı (iter, fare çıkarır) → ısınır.
+// Can 1: emme (kediyi çeker) → torba patlar. Her saldırı sonrası sersemler; üstüne zıplamak vurur (pati işlemez).
+export class SuperVacuum extends Boss {
+  constructor(scene, spec, world) {
+    super(scene, spec, world);
+    this.name = spec.name || 'Süpürge 3000';
+    this.hw = 1.6; this.h = 1.1;
+    this.pawImmune = true;
+    const m = this.model;
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.85, 0.8, 24), mat(0x6f7686, { metalness: 0.4, roughness: 0.4 }));
+    body.position.y = 0.5;
+    m.add(body);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.55, 0.25, 24), mat(0x2f3440));
+    top.position.y = 1.0;
+    m.add(top);
+    const bumper = new THREE.Mesh(new THREE.TorusGeometry(1.86, 0.12, 6, 24, Math.PI), mat(0xff6b6b));
+    bumper.rotation.x = Math.PI / 2;
+    bumper.position.y = 0.35;
+    m.add(bumper);
+    this.led = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff3b3b }));
+    this.led.position.set(0, 1.15, 0.6);
+    m.add(this.led);
+    const face = new THREE.Group();
+    face.position.set(0, 0.6, 1.45);
+    face.scale.setScalar(2.4);
+    eye(face, -0.2, 0.05, 0.1, 1);
+    eye(face, 0.2, 0.05, 0.1, -1);
+    m.add(face);
+    // Toz torbası (emme evresinde şişer)
+    this.bag = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 8), mat(0xc2a878));
+    this.bag.position.set(0, 1.35, -0.7);
+    m.add(this.bag);
+    // Dönen fırçalar
+    this.brushes = [-1, 1].map((sx) => {
+      const br = new THREE.Group();
+      for (let i = 0; i < 4; i++) {
+        const bristle = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.04, 0.1), mat(0x333333));
+        bristle.rotation.y = (i / 4) * Math.PI;
+        br.add(bristle);
+      }
+      br.position.set(1.2 * sx, 0.08, 1.2);
+      m.add(br);
+      return br;
+    });
+    this.alert = alertSprite();
+    this.alert.scale.setScalar(1);
+    this.alert.position.y = 2.4;
+    this.alert.visible = false;
+    this.g.add(this.alert);
+    this.suckBubble = bubbleSprite('💨', '#e8f6ff', 1.1);
+    this.suckBubble.position.y = 2.5;
+    this.suckBubble.visible = false;
+    this.g.add(this.suckBubble);
+    this.stars = dizzyStars();
+    this.stars.scale.setScalar(3);
+    this.stars.position.y = 1.8;
+    this.g.add(this.stars);
+
+    this.pos.set(...spec.p);
+    this.dir = new THREE.Vector3(0, 0, -1);
+    this.goal = this.pos.clone();
+    this.g.rotation.y = Math.PI;
+    this.finish();
+  }
+
+  get stunned() { return this.state === 'stun'; }
+  get harmful() { return this.state === 'charge' || this.state === 'spin' || this.state === 'suck'; }
+
+  enter(state, t) {
+    this.state = state;
+    this.stateT = t;
+    this.alert.visible = state === 'aim';
+    this.suckBubble.visible = state === 'suck';
+    this.stars.visible = state === 'stun';
+  }
+
+  start() { super.start(); this.enter('roar', 1.4); this.events.roar?.(); }
+
+  // Kediye çarptı: emiyorsa tükürür ve torba patlar; koşuyorsa kısa sersemler
+  hitPlayer() {
+    if (this.state === 'suck') { this.events.pop?.(this.pos); this.enter('stun', this.stunTime(3)); }
+    else if (this.state === 'charge') this.enter('stun', this.stunTime(1.6));
+  }
+
+  stunTime(t) { return t + (this.helper ? 1.5 : 0); }
+
+  takeHit() {
+    const hp = super.takeHit();
+    if (hp > 0) this.enter('hurt', 1.0);
+    return hp;
+  }
+
+  randomGoal() {
+    const a = this.arena, mg = 3;
+    return new THREE.Vector3(a.x0 + mg + Math.random() * (a.x1 - a.x0 - 2 * mg), this.pos.y, a.z0 + mg + Math.random() * (a.z1 - a.z0 - 2 * mg));
+  }
+
+  move(dx, dz) {
+    const cx = moveAxis(this.world, this, 'x', dx, false);
+    const cz = moveAxis(this.world, this, 'z', dz, false);
+    const a = this.arena;
+    let wall = !!(cx || cz);
+    if (this.pos.x < a.x0) { this.pos.x = a.x0; wall = true; }
+    if (this.pos.x > a.x1) { this.pos.x = a.x1; wall = true; }
+    if (this.pos.z < a.z0) { this.pos.z = a.z0; wall = true; }
+    if (this.pos.z > a.z1) { this.pos.z = a.z1; wall = true; }
+    return wall;
+  }
+
+  face(dx, dz, k = 0.2) {
+    if (Math.abs(dx) + Math.abs(dz) < 1e-5) return;
+    const yaw = Math.atan2(dx, dz);
+    this.g.rotation.y += Math.atan2(Math.sin(yaw - this.g.rotation.y), Math.cos(yaw - this.g.rotation.y)) * k;
+  }
+
+  // Kediyi it (+) ya da çek (−)
+  shove(player, dx, dz, amount, dt) {
+    const d = Math.hypot(dx, dz) || 1;
+    moveAxis(this.world, player, 'x', (dx / d) * amount * dt, false);
+    moveAxis(this.world, player, 'z', (dz / d) * amount * dt, false);
+  }
+
+  update(dt, speedK, player) {
+    this.t += dt;
+    this.stateT -= dt;
+    this.tickFlash(dt);
+    this.helper = speedK < 1;
+    const p = player.pos;
+    const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
+    const dist = Math.hypot(dx, dz) || 1;
+    let spin = 0, ledOn = Math.sin(this.t * 3) > 0, bob = 0;
+
+    switch (this.state) {
+      case 'idle':
+        ledOn = Math.sin(this.t * 1.5) > 0.6;
+        break;
+      case 'roar':
+        bob = Math.abs(Math.sin(this.t * 16)) * 0.15;
+        spin = 10;
+        this.face(dx, dz);
+        if (this.stateT <= 0) this.enter('wander', 1.2);
+        break;
+      case 'wander': {
+        const gx = this.goal.x - this.pos.x, gz = this.goal.z - this.pos.z, gl = Math.hypot(gx, gz);
+        if (gl < 0.5) this.goal = this.randomGoal();
+        else { const sp = 2.4 * speedK * dt; this.move((gx / gl) * sp, (gz / gl) * sp); this.face(gx, gz); }
+        spin = 8;
+        if (this.stateT <= 0) { this.enter('aim', this.helper ? 1.3 : 0.9); this.events.alert?.(); }
+        break;
+      }
+      case 'aim':
+        // Bip bip: LED hızlı yanıp söner, kediye döner
+        ledOn = Math.sin(this.t * 30) > 0;
+        this.face(dx, dz, 0.4);
+        bob = Math.abs(Math.sin(this.t * 25)) * 0.05;
+        if (this.stateT <= 0) {
+          if (this.hp >= 3) {
+            this.dir.set(dx / dist, 0, dz / dist);
+            this.g.rotation.y = Math.atan2(dx, dz);
+            this.enter('charge', 4);
+            this.events.charge?.();
+          } else if (this.hp === 2) {
+            this.enter('spin', 2.2);
+            this.events.spin?.();
+          } else {
+            this.enter('suck', 2.6);
+            this.events.suck?.();
+          }
+        }
+        break;
+      case 'charge': {
+        const sp = 9 * speedK * dt;
+        spin = 30;
+        if (this.move(this.dir.x * sp, this.dir.z * sp) || this.stateT <= 0) {
+          this.events.bonk?.(this.pos);
+          this.enter('stun', this.stunTime(2.8));
+        }
+        break;
+      }
+      case 'spin':
+        // Fırça fırıldağı: yakındaki kediyi dışarı iter
+        this.g.rotation.y += dt * 12;
+        spin = 40;
+        if (dist < 4.2) this.shove(player, dx, dz, 5 * speedK, dt);
+        if (this.stateT <= 0) { this.events.steam?.(this.pos); this.enter('stun', this.stunTime(2.5)); this.overheat = true; }
+        break;
+      case 'suck': {
+        // Emme: kediyi kendine doğru çeker, torba şişer
+        if (dist < 7.5) this.shove(player, -dx, -dz, (this.helper ? 2 : 3.5), dt);
+        this.face(dx, dz, 0.3);
+        this.bag.scale.setScalar(1 + (1 - this.stateT / 2.6) * 0.8);
+        this.events.suckFx?.(p, this.pos);
+        if (this.stateT <= 0) { this.events.pop?.(this.pos); this.enter('stun', this.stunTime(3)); }
+        break;
+      }
+      case 'stun':
+        ledOn = false;
+        this.stars.rotation.y += dt * 5;
+        this.model.rotation.z = Math.sin(this.t * 10) * 0.06;
+        if (this.overheat && Math.random() < dt * 8) this.events.steam?.(this.pos);
+        if (this.stateT <= 0) { this.model.rotation.z = 0; this.overheat = false; this.bag.scale.setScalar(1); this.enter('wander', 1.4); }
+        break;
+      case 'hurt': {
+        const sp = 3.5 * speedK * dt;
+        this.move((-dx / dist) * sp, (-dz / dist) * sp);
+        this.face(-dx, -dz, 0.3);
+        spin = 20;
+        if (this.stateT <= 0) this.enter('wander', 1.0);
+        break;
+      }
+    }
+    if (this.state !== 'suck' && this.state !== 'stun') this.bag.scale.setScalar(1);
+    this.brushes.forEach((br, i) => (br.rotation.y += dt * spin * (i ? 1 : -1)));
+    this.led.material.color.setHex(ledOn ? 0xff3b3b : 0x5a1010);
+    this.model.position.y = bob;
+    this.g.position.copy(this.pos);
+    this.alert.position.y = 2.4 + Math.sin(this.t * 12) * 0.08;
+  }
+}
+
 export function createBoss(scene, spec, world) {
+  if (spec.type === 'supervacuum') return new SuperVacuum(scene, spec, world);
   if (spec.type === 'kingmouse') return new KingMouse(scene, spec, world);
   if (spec.type === 'mole') return new Mole(scene, spec, world);
   return null;

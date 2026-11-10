@@ -35,7 +35,10 @@ Ekran tuşları dokunmatik cihazlarda otomatik açılır; Ayarlar → "📱 Ekra
 | 🛁 Banyo | Kaygan köpük, havlu tırmanışı, tuvalet kâğıdı bandı, aralıklı musluk, vana → küvet dolar ve ördekler yükselir, çamaşır tamburu, kapıya kaydırak | Yüzücü Gözlüğü (Yere Basma!) |
 | 🌻 Bahçe | Çit üstünde denge, süpüren fıskiye, köstebek tüneli, ayçiçeği zıplatıcı, uyuyan köpek (💤 iken geç, 👀 iken dur), sulayınca büyüyen çiçekler → ağaç evi, **boss: Dev Köstebek** | Hasır Şapka (Çit Yarışı) |
 | 🌙 Çatı | Gece; eğimli kiremitler, rüzgârlı kalas, bacanın dumanında yükselme, çöken kiremitler, baca içinde kemik, rüzgâr gülü, 3 yıldız → Ay Köprüsü | Yıldızlı Pelerin (Yıldız Yolu) |
-| 🔦 Bodrum | Yapım aşamasında | |
+| 🔦 Bodrum (final) | Karanlık + fener, ışık düğmeleri, kömür çukuru üstünde taşıma bandı, sandık itme + mavi plakalar → ızgara, **final boss: Süpürge 3000**, bitiş ekranı | Madenci Kaskı (Fener Avı) |
+
+Süpürge 3000: 3 evre — koşu (kaç, duvara toslasın), fırça fırıldağı (uzak dur, yardımcı fareler çıkar), emme (çekilme, torba patlar). Her seferinde sersemleyince **üstüne zıpla** (pati işlemez).
+18 balık kemiğinin hepsini toplayınca **Altın Kürk** kazanılır; Madenci Kaskı her odada kedinin çevresini aydınlatır.
 
 Dev Köstebek: toprak titreyen tümseğe koş, çıkınca pati at ya da üstüne zıpla; kırmızı halkalara toprak topu düşer.
 Kral Fare: "!" gösterip koşar; kenara kaç, duvara toslasın. Sersemleyince üstüne zıpla (ya da pati at). 3 vuruşta yenilir, çan ortaya çıkar.
@@ -57,7 +60,10 @@ Diğer alanlar:
 - `switches` `type: "star"` → dokununca yanar; `theme.night` → gece ışığı, yıldızlar ve ay.
 - `"grow": true` → gruptaki kutu açılınca yerden büyüyerek çıkar.
 - `theme.outdoor` → tavan yok, alçak çit, uzak ağaçlar ve bulutlar; `floorTex: "grass"`.
-- Düşmanlar: `vacuum`, `mouse`, `spider`, `roamer`, `soap`, `owl`, `dog` (`area`, `sleep`, `pushZ`). Boss: `kingmouse`, `mole` (`holes`, `respawn`).
+- Düşmanlar: `vacuum`, `mouse`, `spider`, `roamer`, `soap`, `owl`, `dog` (`area`, `sleep`, `pushZ`). Boss: `kingmouse`, `mole` (`holes`), `supervacuum`; hepsi `respawn`, `lightsOn` alabilir.
+- `theme.dark` → loş ışık, sis ve fener; `lights: [{ p, g, i }]` → gruba bağlı lambalar.
+- `crates: [{ p }]` → patiyle bir kare kayan sandık (plakalara basar); `switches` içinde `"reset": true` → sandıkları geri getirir.
+- `water` içinde `c` + `msg` → renkli tehlike zemini (ör. kömür çukuru). `"final": true` → oda bitince oyun sonu ekranı.
 - `switches`: `plate` (üstüne bas), `button` ya da `valve` (pati/üstüne zıpla); `targets: [["grup", true]]`, `bulb` ile yanan ampul.
 - `puzzles`: `need` listesindeki tüm anahtarlar basılınca `targets` açılır; görev satırında sayaç gösterir.
 - `steps`: `{ until: "grup", text }` — grup açılana kadar görev satırında gösterilir.

@@ -301,6 +301,10 @@ h2 { margin: 0 0 14px; font-size: 30px; }
 .seg { background: var(--gold); border-radius: 12px; padding: 6px 12px; font-size: 16px; flex-shrink: 0; }
 .switch.on::after { left: 32px; }
 
+.confetti-rain { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.confetti-rain span { position: absolute; top: -10%; font-size: 30px; animation: rain linear infinite; }
+@keyframes rain { to { transform: translateY(120vh) rotate(360deg); } }
+.panel.ending { position: relative; }
 .stats { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin: 10px 0 16px; font-size: 24px; font-weight: 900; }
 .stats .pill { box-shadow: none; background: #fff; }
 

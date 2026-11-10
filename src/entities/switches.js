@@ -126,6 +126,7 @@ export class Switch {
     this.on = on;
     this.pressT = on ? 0.25 : 0;
     if (on) this.spinT = 2.5;
+    if (on && this.spec.reset) this.offT = 1.2;
     this.top.material.emissiveIntensity = on ? 0.9 : 0.12;
     if (this.type === 'star') { this.top.material.color.setHex(on ? 0xffd447 : 0x8a8fb0); this.top.material.emissiveIntensity = on ? 1.2 : 0.15; }
     if (this.bulbMat) {
@@ -137,6 +138,8 @@ export class Switch {
 
   update(dt, t) {
     this.pressT = Math.max(0, this.pressT - dt);
+    // Sıfırlama düğmesi bir süre sonra yeniden basılabilir olur
+    if (this.offT > 0) { this.offT -= dt; if (this.offT <= 0) this.set(false); }
     if (this.type === 'plate') {
       this.top.position.y = this.on ? 0.05 : 0.1;
     } else if (this.type === 'star') {

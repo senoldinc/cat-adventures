@@ -218,6 +218,7 @@ export class Menus {
           <div class="pill">⏱️ ${formatTime(stats.time)}</div>
         </div>
         ${stats.newBest ? '<div style="font-weight:900;color:#5cc96b;margin-bottom:8px">⭐ Yeni rekor!</div>' : ''}
+        ${stats.gold ? '<div style="font-weight:900;color:#d98f00;margin-bottom:8px">✨ 18 kemiğin hepsi! Altın Kürk kazandın!</div>' : ''}
         <button class="btn primary" data-a="again">🔄 Tekrar Oyna</button>
         <button class="btn" data-a="shop">🛍️ Mağaza</button>
         <button class="btn" data-a="home">🏠 Ana Menü</button>
@@ -227,6 +228,31 @@ export class Menus {
     on(el, '[data-a=home]', () => this.a.quit());
   }
 }
+
+// Oyunun sonu: Bodrum bitince
+Menus.prototype.ending = function ending(stats) {
+  const rain = Array.from({ length: 24 }, (_, i) => `<span style="left:${(i * 41) % 100}%;animation-delay:${(i % 8) * 0.35}s;animation-duration:${3 + (i % 5) * 0.5}s">${['🎉', '⭐', '🐟', '🔔', '🐾', '✨'][i % 6]}</span>`).join('');
+  const el = render(`
+    <div class="confetti-rain">${rain}</div>
+    <div class="panel ending">
+      <div style="font-size:64px;line-height:1">🐱🏺</div>
+      <h2>Minnoş mama kavanozunu doldurdu!</h2>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">${stats.done >= stats.rooms ? 'Bütün ev tertemiz, aile uyanmadan her şey yerli yerinde. Aferin sana!' : `Süpürge 3000 sustu! ${stats.rooms - stats.done} oda daha bitirince bütün ev tertemiz olacak.`}</div>
+      <div class="stats">
+        <div class="pill">${kibbleIcon} ${stats.kibble}</div>
+        <div class="pill">🦴 ${stats.bones}/18</div>
+        <div class="pill">🏠 ${stats.done}/${stats.rooms}</div>
+        <div class="pill">⏱️ ${formatTime(stats.time)}</div>
+      </div>
+      ${stats.gold ? '<div style="font-weight:900;color:#d98f00;margin-bottom:8px">✨ Altın Kürk kazandın! Mağazadan giyebilirsin.</div>' : stats.bones < 18 ? `<div style="font-weight:800;margin-bottom:8px">🦴 ${18 - stats.bones} kemik daha bulursan Altın Kürk senin!</div>` : ''}
+      <button class="btn primary" data-a="home">🏠 Ana Menü</button>
+      <button class="btn" data-a="shop">🛍️ Mağaza</button>
+      <button class="btn" data-a="again">🔄 Bodrumu Tekrar Oyna</button>
+    </div>`);
+  on(el, '[data-a=home]', () => this.a.quit());
+  on(el, '[data-a=shop]', () => this.shop(() => this.ending(stats)));
+  on(el, '[data-a=again]', () => { this.hide(); this.a.restart(); });
+};
 
 export function formatTime(t) {
   const m = Math.floor(t / 60);

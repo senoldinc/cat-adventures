@@ -73,6 +73,8 @@ export class Level {
       const b = makeBox(spec);
       b.solid = false;
       b.id = spec.id || null;
+      b.msg = spec.msg || null;
+      b.tint = !!spec.c;
       // Vanayla dolan su: grup açılınca üst yüzey `rise` kadar yükselir
       if (spec.g) {
         b.g = spec.g;
@@ -82,10 +84,12 @@ export class Level {
         if (!this.groups.has(spec.g)) this.groups.set(spec.g, { on: false, boxes: [] });
       }
       this.water.push(b);
-      const m = new THREE.Mesh(new THREE.BoxGeometry(spec.s[0], 1, spec.s[2]), new THREE.MeshStandardMaterial({ color: 0x6fc3f2, transparent: true, opacity: 0.75, roughness: 0.1, metalness: 0.1 }));
+      const m = new THREE.Mesh(new THREE.BoxGeometry(spec.s[0], 1, spec.s[2]), spec.c
+        ? new THREE.MeshStandardMaterial({ color: spec.c, roughness: 1, flatShading: true })
+        : new THREE.MeshStandardMaterial({ color: 0x6fc3f2, transparent: true, opacity: 0.75, roughness: 0.1, metalness: 0.1 }));
       m.receiveShadow = true;
       b.mesh = m;
-      this.waterMeshes.push(m);
+      if (!spec.c) this.waterMeshes.push(m);
       this.root.add(m);
       this.fitWater(b);
     }
@@ -141,6 +145,29 @@ export class Level {
         zone.mesh = m;
       }
       return zone;
+    });
+
+    // Gruba bağlı lambalar (düğmeyle yanar)
+    this.lamps = (data.lights || []).map((l) => {
+      if (l.g && !this.groups.has(l.g)) this.groups.set(l.g, { on: !!l.on, boxes: [] });
+      const light = new THREE.PointLight(l.c || 0xffe2a8, 0, l.r || 16, 1.2);
+      light.position.set(...l.p);
+      this.root.add(light);
+      const bulbMat = new THREE.MeshStandardMaterial({ color: 0x555555, emissive: l.c || 0xffe2a8, emissiveIntensity: 0 });
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), bulbMat);
+      bulb.position.set(l.p[0], l.p[1] + 0.2, l.p[2]);
+      this.root.add(bulb);
+      const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, this.data.room.height - l.p[1], 4), mat(0x222222));
+      cord.position.set(l.p[0], (this.data.room.height + l.p[1]) / 2 + 0.2, l.p[2]);
+      this.root.add(cord);
+      return { light, bulbMat, g: l.g, i: l.i || 12, level: 0 };
+    });
+
+    // İtilebilir sandıklar
+    this.crates = (data.crates || []).map((c) => {
+      const box = this.addBox({ p: c.p, s: c.s || [1.2, 1.2, 1.2], c: c.c || '#b5814a', look: 'crate' });
+      box.kind = 'crate';
+      return { box, home: [...c.p], anim: null, vy: 0 };
     });
 
     // Oda patronu
@@ -456,6 +483,66 @@ export class Level {
     return true;
   }
 
+  // Sandığı bir kare (1.2) it. Önü doluysa false.
+  pushCrate(crate, dx, dz) {
+    if (crate.anim) return false;
+    const b = crate.box, step = b.maxX - b.minX;
+    const tx = dx * step, tz = dz * step;
+    const e = 0.02;
+    for (const o of this.world.overlaps(b.minX + tx + e, b.minY + e, b.minZ + tz + e, b.maxX + tx - e, b.maxY - e, b.maxZ + tz - e)) {
+      if (o !== b) return false;
+    }
+    crate.anim = { tx, tz, t: 0 };
+    return true;
+  }
+
+  resetCrates() {
+    for (const c of this.crates) {
+      const b = c.box, hx = (b.maxX - b.minX) / 2, hy = (b.maxY - b.minY) / 2, hz = (b.maxZ - b.minZ) / 2;
+      const [x, y, z] = c.home;
+      b.minX = x - hx; b.maxX = x + hx; b.minY = y - hy; b.maxY = y + hy; b.minZ = z - hz; b.maxZ = z + hz;
+      c.anim = null; c.vy = 0;
+      b.mesh.position.set(x, y, z);
+      b.mesh.scale.setScalar(0.01);
+      this.pops.push({ mesh: b.mesh, t: 0 });
+    }
+  }
+
+  // Sandık bu plakanın üstünde mi?
+  crateOn(sw) {
+    return this.crates.some((c) => {
+      const b = c.box, cx = (b.minX + b.maxX) / 2, cz = (b.minZ + b.maxZ) / 2;
+      return Math.abs(b.minY - sw.pos.y) < 0.3 && (cx - sw.pos.x) ** 2 + (cz - sw.pos.z) ** 2 < 0.85 * 0.85;
+    });
+  }
+
+  updateCrates(dt) {
+    for (const c of this.crates) {
+      const b = c.box;
+      b.dx = b.dy = b.dz = 0;
+      if (c.anim) {
+        const a = c.anim;
+        const k0 = Math.min(1, a.t / 0.25);
+        a.t += dt;
+        const k1 = Math.min(1, a.t / 0.25);
+        const mx = a.tx * (k1 - k0), mz = a.tz * (k1 - k0);
+        b.minX += mx; b.maxX += mx; b.minZ += mz; b.maxZ += mz;
+        b.dx = mx; b.dz = mz;
+        if (k1 >= 1) c.anim = null;
+      } else {
+        // Altı boşsa düşer
+        const cx = (b.minX + b.maxX) / 2, cz = (b.minZ + b.maxZ) / 2, hw = (b.maxX - b.minX) / 2 - 0.05;
+        const g = this.world.groundBelow(cx, b.minY + 0.01, cz, hw);
+        if (g.y < b.minY - 0.01) {
+          c.vy = Math.min(c.vy + 20 * dt, 15);
+          const dy = -Math.min(c.vy * dt, b.minY - g.y);
+          b.minY += dy; b.maxY += dy; b.dy = dy;
+        } else c.vy = 0;
+      }
+      b.mesh.position.set((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, (b.minZ + b.maxZ) / 2);
+    }
+  }
+
   setHelper(on) {
     this.helper = on;
     for (const b of this.widenables) {
@@ -500,6 +587,7 @@ export class Level {
       b.mesh.position.y = y;
       b.mesh.rotation.z = floating ? Math.sin(this.t * 1.5 + f.phase) * 0.05 : 0;
     }
+    this.updateCrates(dt);
     // Taşıma bantları: kutu yerinde kalır, üstündekini taşır
     for (const b of this.convs) {
       b.dx = b.conv[0] * dt;
@@ -540,9 +628,9 @@ export class Level {
 
   inWater(p, hw) {
     for (const w of this.water) {
-      if (p.x + hw > w.minX && p.x - hw < w.maxX && p.z + hw > w.minZ && p.z - hw < w.maxZ && p.y < w.maxY - 0.02 && p.y > w.minY - 0.5) return true;
+      if (p.x + hw > w.minX && p.x - hw < w.maxX && p.z + hw > w.minZ && p.z - hw < w.maxZ && p.y < w.maxY - 0.02 && p.y > w.minY - 0.5) return w;
     }
-    return false;
+    return null;
   }
 
   update(dt) {
@@ -555,6 +643,12 @@ export class Level {
     this.door.update(dt, t);
     for (const b of this.bobbers) { b.position.y = 0.12 + Math.sin(t * 2 + b.position.x) * 0.05; b.rotation.y = Math.sin(t * 0.5 + b.position.z) * 0.6; }
     if (this.clockHand) this.clockHand.rotation.z = -t * 0.5;
+    for (const l of this.lamps) {
+      const on = !l.g || this.groupOn(l.g);
+      l.level += ((on ? 1 : 0) - l.level) * Math.min(1, dt * 6);
+      l.light.intensity = l.i * l.level;
+      l.bulbMat.emissiveIntensity = 2 * l.level;
+    }
     for (const m of this.waterMeshes) m.material.color.setHSL(0.56, 0.8, 0.68 + Math.sin(t * 1.5) * 0.03);
     for (const sp of this.spinners) sp.rotation.y += dt * 3;
     for (const f of this.flyers) {

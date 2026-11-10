@@ -10,7 +10,7 @@ import { pollInput, showTouchControls, clearInput, isTouch, touchUiEnabled } fro
 import { sfx, setMusic } from './audio.js';
 import { createEnemy } from './entities/enemies.js';
 import { save, persist, levelSave } from './save.js';
-import { grant, itemById } from './shop.js';
+import { grant, itemById, owns } from './shop.js';
 import { LEVELS } from './levels/index.js';
 import { aabbOverlap, moveAxis } from './physics.js';
 
@@ -57,7 +57,7 @@ export class Game {
         if (this.level) this.level.setHelper(save.settings.helper);
         showTouchControls(this.state === 'play');
       },
-      equipChanged: () => this.player.model.setEquipped(save.equipped),
+      equipChanged: () => { this.player.model.setEquipped(save.equipped); this.updateCatLight(); },
     });
 
     this.state = 'menu';
@@ -94,6 +94,10 @@ export class Game {
     this.scene.add(sun.target);
     this.catLight = new THREE.PointLight(0xffe2b8, 0, 7, 1.5);
     this.scene.add(this.catLight);
+    // Karanlık odalar için kedinin baktığı yöne dönen fener
+    this.flash = new THREE.SpotLight(0xfff1c8, 0, 18, 0.55, 0.5, 1.2);
+    this.scene.add(this.flash);
+    this.scene.add(this.flash.target);
   }
 
   wirePlayerEvents() {
@@ -133,24 +137,42 @@ export class Game {
         roar: () => sfx.bossRoar(),
         alert: () => sfx.alert(),
         charge: () => sfx.charge(),
-        bonk: () => { sfx.bonk(); this.effects.burst({ x: boss.pos.x, y: boss.pos.y + 0.8, z: boss.pos.z }, { color: 0xffe066, count: 8, speed: 3, size: 0.12, life: 0.5 }); },
+        bonk: () => { sfx.bonk(); this.effects.burst({ x: boss.pos.x, y: boss.pos.y + 0.8, z: boss.pos.z }, { color: 0xffe066, count: boss.pawImmune ? 16 : 8, speed: boss.pawImmune ? 5 : 3, size: 0.12, life: 0.5 }); },
         spawn: (n) => this.spawnMinions(n),
         dirt: (pt) => this.effects.burst({ x: pt.x, y: 0.4, z: pt.z }, { color: 0x8a5a32, count: 2, speed: 2.5, size: 0.12, life: 0.5, gravity: 10, up: 3 }),
-        pop: () => { sfx.pop(); this.effects.burst({ x: boss.pos.x, y: 0.5, z: boss.pos.z }, { color: 0x8a5a32, count: 12, speed: 4, size: 0.16, life: 0.6, gravity: 12, up: 3 }); },
         throw: () => sfx.throw(),
         splat: (pt) => { sfx.splat(); this.effects.burst({ x: pt.x, y: 0.2, z: pt.z }, { color: 0x7a4a2a, count: 10, speed: 3, size: 0.14, life: 0.5, gravity: 10, up: 2 }); },
         hurtPlayer: (x, z) => this.hurt(x, z),
+        spin: () => {
+          sfx.charge();
+          if (this.level.enemies.filter((e) => e.minion && e.alive).length < 2) this.spawnMinions(2);
+        },
+        steam: (pt) => this.effects.drift({ x: pt.x + (Math.random() - 0.5) * 2, y: 1.3, z: pt.z + (Math.random() - 0.5) * 2 }, { x: 0, y: 2.5, z: 0 }, 0xf0f0f0, 1.2, 0.25),
+        suck: () => sfx.suck(),
+        suckFx: (pp, bp) => { if (Math.random() < 0.4) this.effects.drift({ x: pp.x + (Math.random() - 0.5) * 3, y: 0.4 + Math.random(), z: pp.z + (Math.random() - 0.5) * 3 }, { x: (bp.x - pp.x) * 0.8, y: 0, z: (bp.z - pp.z) * 0.8 }, 0x9a8a7a, 1.0, 0.1); },
+        pop: (pt) => {
+          if (boss.isBoss && pt && boss.pawImmune) {
+            sfx.poof();
+            this.effects.burst({ x: pt.x, y: 1.5, z: pt.z }, { color: 0xc2a878, count: 20, speed: 5, size: 0.2, life: 0.8, gravity: 4, up: 2 });
+            this.hud.toast('💥 Torba patladı! Şimdi üstüne zıpla!', 1.8);
+            return;
+          }
+          sfx.pop();
+          this.effects.burst({ x: boss.pos.x, y: 0.5, z: boss.pos.z }, { color: 0x8a5a32, count: 12, speed: 4, size: 0.16, life: 0.6, gravity: 12, up: 3 });
+        },
       };
     }
     setMusic(data.theme.music || 'salon');
-    // Gece: soğuk ay ışığı + kedinin etrafında yumuşak ışık
-    const night = !!data.theme.night;
-    this.hemi.color.setHex(night ? 0x8fa6ff : 0xfff4e0);
-    this.hemi.groundColor.setHex(night ? 0x2a2440 : 0xb07a4a);
-    this.hemi.intensity = night ? 1.1 : 2.0;
-    this.sun.color.setHex(night ? 0xbfd4ff : 0xfff1d6);
-    this.sun.intensity = night ? 1.3 : 2.6;
-    this.catLight.intensity = night ? 5 : 0;
+    // Gece: soğuk ay ışığı; karanlık: loş ışık + sis + fener
+    const night = !!data.theme.night, dark = !!data.theme.dark;
+    this.hemi.color.setHex(night ? 0x8fa6ff : dark ? 0x9a8aaa : 0xfff4e0);
+    this.hemi.groundColor.setHex(night ? 0x2a2440 : dark ? 0x221a28 : 0xb07a4a);
+    this.hemi.intensity = night ? 1.1 : dark ? 0.55 : 2.0;
+    this.sun.color.setHex(night ? 0xbfd4ff : dark ? 0x8a7aa0 : 0xfff1d6);
+    this.sun.intensity = night ? 1.3 : dark ? 0.2 : 2.6;
+    this.scene.fog = dark ? new THREE.Fog(data.theme.sky, 10, 34) : null;
+    this.flash.intensity = dark ? 60 : 0;
+    this.updateCatLight();
     this.level.events = {
       crumble: (pt) => { sfx.crumble(); this.effects.burst({ x: pt.x, y: pt.y + 0.2, z: pt.z }, { color: 0xc8553d, count: 10, speed: 2.5, size: 0.14, life: 0.7, gravity: 12, up: 1 }); },
     };
@@ -251,9 +273,22 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
   }
 
+  // Kedinin çevresindeki ışık: gece/karanlıkta, ya da Madenci Kaskı giyiliyse
+  updateCatLight() {
+    const th = this.levelData?.theme || {};
+    const miner = save.equipped.hat === 'hat_miner';
+    this.catLight.intensity = th.night ? 5 : th.dark ? 4 : miner ? 2.5 : 0;
+    this.catLight.color.setHex(miner ? 0xfff1a8 : 0xffe2b8);
+  }
+
   updateBlob() {
     const p = this.player.pos;
     this.catLight.position.set(p.x, p.y + 1.6, p.z);
+    if (this.flash.intensity > 0) {
+      const fx = Math.sin(this.player.yaw), fz = Math.cos(this.player.yaw);
+      this.flash.position.set(p.x - fx * 0.6, p.y + 2.2, p.z - fz * 0.6);
+      this.flash.target.position.set(p.x + fx * 6, p.y - 0.5, p.z + fz * 6);
+    }
     const g = this.level.world.groundBelow(p.x, p.y + 0.05, p.z, 0.05);
     if (g.y === -Infinity) { this.blob.visible = false; return; }
     const h = p.y - g.y;
@@ -305,6 +340,7 @@ export class Game {
     if (player.grounded && player.groundBox?.kind === 'crumble' && level.touchCrumble(player.groundBox)) sfx.crack();
     const cx = p.x, cy = p.y + 0.3, cz = p.z;
     const paw = player.pawActive ? player.pawHitbox() : null;
+    this.updateCrates(paw);
     this.updateSwitches(paw);
 
     // Mama
@@ -401,11 +437,17 @@ export class Game {
     this.updateTunnels();
 
     // Su ve boşluğa düşme
-    if (level.inWater(p, player.hw * 0.6)) {
-      sfx.splash();
-      this.effects.splash({ x: p.x, y: 0.2, z: p.z });
+    const wet = level.inWater(p, player.hw * 0.6);
+    if (wet) {
+      if (wet.msg) {
+        sfx.splat();
+        this.effects.burst({ x: p.x, y: 0.4, z: p.z }, { color: 0x2b2b30, count: 14, speed: 3, size: 0.16, life: 0.6, gravity: 8, up: 2 });
+      } else {
+        sfx.splash();
+        this.effects.splash({ x: p.x, y: 0.2, z: p.z });
+      }
       if (!helper) run.hearts--;
-      this.hud.toast(helper ? '💧 Hop, kuru yere!' : '💧 Brr, ıslandın!', 1.3);
+      this.hud.toast(wet.msg || (helper ? '💧 Hop, kuru yere!' : '💧 Brr, ıslandın!'), 1.3);
       this.respawn();
     } else if (p.y < this.levelData.killY) {
       if (!helper) run.hearts--;
@@ -613,6 +655,26 @@ export class Game {
     }
   }
 
+  // Sandığa pati: kedinin baktığı ana yönde bir kare kayar
+  updateCrates(paw) {
+    const player = this.player;
+    if (!paw) return;
+    for (const c of this.level.crates) {
+      if (player.pawHits.has(c) || !sphereHitsBox(paw, c.box)) continue;
+      player.pawHits.add(c);
+      const fx = Math.sin(player.yaw), fz = Math.cos(player.yaw);
+      const [dx, dz] = Math.abs(fx) > Math.abs(fz) ? [Math.sign(fx), 0] : [0, Math.sign(fz)];
+      if (this.level.pushCrate(c, dx, dz)) {
+        sfx.crate();
+        const b = c.box;
+        this.effects.dust({ x: (b.minX + b.maxX) / 2, y: b.minY + 0.1, z: (b.minZ + b.maxZ) / 2 });
+      } else {
+        sfx.bonk();
+        this.hud.toast('📦 Arkası dolu, kaymıyor!', 1.2);
+      }
+    }
+  }
+
   // Plakalar (üstüne bas) ve düğmeler (pati ya da üstüne zıpla)
   updateSwitches(paw) {
     const player = this.player;
@@ -625,7 +687,7 @@ export class Game {
         continue;
       }
       if (sw.type === 'plate') {
-        const on = sw.standing(player);
+        const on = sw.standing(player) || this.level.crateOn(sw);
         if (on && !sw.on) this.pressSwitch(sw, true);
         else if (!on && sw.on && sw.spec.hold) this.pressSwitch(sw, false);
       } else if (!sw.on) {
@@ -640,6 +702,7 @@ export class Game {
   pressSwitch(sw, on) {
     if (!sw.set(on)) return;
     const level = this.level;
+    if (on && sw.spec.reset) { level.resetCrates(); sfx.appear(); this.hud.toast('🔄 Sandıklar yerine döndü!', 1.6); }
     if (sw.type === 'plate') sfx.plate(); else if (sw.type === 'star') sfx.star(); else sfx.button();
     if (on) {
       this.effects.sparkle({ x: sw.pos.x, y: sw.pos.y + 0.6, z: sw.pos.z }, sw.color.getHex());
@@ -683,8 +746,8 @@ export class Game {
 
     if (paw && !player.pawHits.has(boss) && sphereHitsBox(paw, box)) {
       player.pawHits.add(boss);
-      if (boss.stunned) this.bossHit();
-      else if (!busy) { sfx.bonk(); this.hud.toast(boss.spec.tip || '🛡️ Önce sersemlet!', 1.6); }
+      if (boss.stunned && !boss.pawImmune) this.bossHit();
+      else if (!busy) { sfx.bonk(); this.hud.toast(boss.stunned && boss.pawImmune ? '🦶 Pati işlemiyor! Üstüne zıpla!' : boss.spec.tip || '🛡️ Önce sersemlet!', 1.6); }
     }
     if (!boss.alive || !aabbOverlap(pBox, box)) return;
     const fromAbove = p.y >= boss.pos.y + boss.h * 0.4 && player.vel.y <= 1;
@@ -708,6 +771,7 @@ export class Game {
     // Arena kapısı kapanırsa dışarıda doğmamak için kayıt noktası arenaya taşınır
     if (boss.spec.respawn) { const [x, y, z] = boss.spec.respawn; this.run.checkpoint = { x, y, z }; }
     this.setGroup('gate', true);
+    for (const gid of boss.spec.lightsOn || []) this.setGroup(gid, true);
   }
 
   bossHit() {
@@ -792,10 +856,19 @@ export class Game {
     const newBest = ls.bestTime === null || run.time < ls.bestTime;
     if (newBest) ls.bestTime = run.time;
     ls.done = true;
+    // 18 kemiğin hepsi toplandıysa Altın Kürk
+    const allBones = LEVELS.filter((l) => !l.soon).reduce((n, l) => n + levelSave(l.id).bones.filter(Boolean).length, 0);
+    const gold = allBones >= 18 && grant('fur_gold');
+    if (gold) this.player.model.setEquipped(save.equipped);
     persist();
     this.hud.show(false);
     showTouchControls(false);
+    if (this.levelData.final) {
+      this.menus.ending({ kibble: save.kibble, bones: allBones, time: run.time, gold, done: LEVELS.filter((l) => !l.soon && levelSave(l.id).done).length, rooms: LEVELS.filter((l) => !l.soon).length });
+      return;
+    }
     this.menus.complete({
+      gold,
       name: this.levelData.name,
       kibble: run.kibble,
       totalKibble: this.level.kibble.total,

@@ -222,14 +222,15 @@ export function decorateBox(mesh, look, size, color) {
   } else if (look === 'towelshelf') {
     mesh.material = mat(0xdfe3ea, { metalness: 0.5, roughness: 0.3 });
     for (let i = 0; i < 3; i++) add(mesh, new THREE.CylinderGeometry(0.15, 0.15, 0.5, 8), mat([0x7bc96f, 0x5ab0e8, 0xff9db8][i]), -w * 0.25, h / 2 + 0.25, -d / 2 + 0.5 + i * 0.6);
-  } else if (look === 'tproll') {
-    // Tuvalet kâğıdı bandı: kayan dokulu şerit + iki ucunda rulo
+  } else if (look === 'tproll' || look === 'belt') {
+    // Tuvalet kâğıdı bandı / lastik taşıma bandı: kayan dokulu şerit + iki ucunda rulo
+    const belt = look === 'belt';
     const c = document.createElement('canvas');
     c.width = 32; c.height = 64;
     const x = c.getContext('2d');
-    x.fillStyle = '#ffffff'; x.fillRect(0, 0, 32, 64);
-    x.fillStyle = '#d6e9ff'; for (let i = 0; i < 4; i++) x.fillRect(0, i * 16, 32, 2);
-    x.fillStyle = '#ff9db8'; x.beginPath(); x.arc(16, 8, 4, 0, Math.PI * 2); x.fill();
+    x.fillStyle = belt ? '#3a3a40' : '#ffffff'; x.fillRect(0, 0, 32, 64);
+    x.fillStyle = belt ? '#ffd23d' : '#d6e9ff'; for (let i = 0; i < 4; i++) x.fillRect(0, i * 16, 32, belt ? 4 : 2);
+    if (!belt) { x.fillStyle = '#ff9db8'; x.beginPath(); x.arc(16, 8, 4, 0, Math.PI * 2); x.fill(); }
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -241,7 +242,7 @@ export function decorateBox(mesh, look, size, color) {
     mesh.userData.scrollLen = 1.2;
     const len = alongZ ? d : w;
     for (const sgn of [-1, 1]) {
-      const roll = add(mesh, new THREE.CylinderGeometry(0.45, 0.45, alongZ ? w + 0.1 : d + 0.1, 14), mat(0xffffff), alongZ ? 0 : (len / 2) * sgn, -0.25, alongZ ? (len / 2) * sgn : 0);
+      const roll = add(mesh, new THREE.CylinderGeometry(0.45, 0.45, alongZ ? w + 0.1 : d + 0.1, 14), mat(belt ? 0x8a8f9c : 0xffffff), alongZ ? 0 : (len / 2) * sgn, -0.25, alongZ ? (len / 2) * sgn : 0);
       roll.rotation.z = alongZ ? Math.PI / 2 : 0;
       roll.rotation.x = alongZ ? 0 : Math.PI / 2;
     }
@@ -412,6 +413,46 @@ export function decorateBox(mesh, look, size, color) {
     mesh.material = new THREE.MeshStandardMaterial({ color: 0xfff1a8, emissive: 0xffd447, emissiveIntensity: 0.7, roughness: 0.3, flatShading: true });
     const st = add(mesh, new THREE.OctahedronGeometry(0.3, 0), new THREE.MeshBasicMaterial({ color: 0xffffff }), 0, h / 2 + 0.3, 0);
     st.castShadow = false;
+  } else if (look === 'web') {
+    // Örümcek ağı: tırmanılabilir yarı saydam ızgara
+    mesh.material = new THREE.MeshStandardMaterial({ color: 0xe8e8f0, transparent: true, opacity: 0.25 });
+    mesh.castShadow = false;
+    const strand = new THREE.MeshBasicMaterial({ color: 0xf4f4ff });
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI;
+      const st = add(mesh, new THREE.BoxGeometry(0.03, Math.hypot(h, d), 0.03), strand, -w / 2 - 0.02, 0, 0);
+      st.rotation.x = a;
+      st.castShadow = false;
+    }
+    for (let r = 1; r <= 3; r++) {
+      const ring = add(mesh, new THREE.TorusGeometry(Math.min(h, d) * 0.16 * r, 0.015, 3, 8), strand, -w / 2 - 0.02, 0, 0);
+      ring.rotation.y = Math.PI / 2;
+      ring.castShadow = false;
+    }
+  } else if (look === 'shelf') {
+    mesh.material = mat(0x8a6a4a);
+    const cols = [0xe8574a, 0x7bc96f, 0xffd166, 0x5ab0e8];
+    for (let i = 0; i < Math.floor(d / 0.7); i++) {
+      add(mesh, new THREE.CylinderGeometry(0.2, 0.2, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0xd8f0ff, transparent: true, opacity: 0.5 }), w * 0.3, h / 2 + 0.25, -d / 2 + 0.35 + i * 0.7).castShadow = false;
+      add(mesh, new THREE.CylinderGeometry(0.21, 0.21, 0.1, 8), mat(cols[i % 4]), w * 0.3, h / 2 + 0.55, -d / 2 + 0.35 + i * 0.7);
+    }
+  } else if (look === 'crate') {
+    mesh.material = mat(0xc98a55);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(mesh, new THREE.BoxGeometry(0.12, h + 0.02, 0.12), mat(0x8a5a32), (w / 2 - 0.05) * sx, 0, (d / 2 - 0.05) * sz);
+    for (const face of [-1, 1]) {
+      const plank = add(mesh, new THREE.BoxGeometry(w * 0.95, 0.14, 0.04), mat(0x8a5a32), 0, 0, (d / 2 + 0.01) * face);
+      plank.rotation.z = 0.78;
+      const plank2 = add(mesh, new THREE.BoxGeometry(0.04, 0.14, d * 0.95), mat(0x8a5a32), (w / 2 + 0.01) * face, 0, 0);
+      plank2.rotation.x = 0.78;
+    }
+    add(mesh, new THREE.CircleGeometry(0.18, 8), new THREE.MeshBasicMaterial({ color: 0xfff3e0 }), 0, h / 2 + 0.01, 0).rotation.x = -Math.PI / 2;
+  } else if (look === 'grate') {
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    const iron = mat(0x6b6f7a, { metalness: 0.6, roughness: 0.4 });
+    const n = Math.round(w / 0.6);
+    for (let i = 0; i <= n; i++) add(mesh, new THREE.CylinderGeometry(0.06, 0.06, h, 6), iron, -w / 2 + (w / n) * i, 0, 0);
+    for (const y of [-h / 2 + 0.3, 0, h / 2 - 0.3]) add(mesh, new THREE.BoxGeometry(w, 0.12, 0.12), iron, 0, y, 0);
   } else if (look === 'wallshelf') {
     for (const s of [-1, 1]) {
       const br = add(mesh, new THREE.BoxGeometry(0.15, 0.8, 0.8), mat(0x8a5a32), (w / 3) * s, -0.5, d / 2 - 0.4);
@@ -646,6 +687,49 @@ export function buildProp(spec) {
       add(top, new THREE.BoxGeometry(0.05, 0.5, 0.5), mat(0xffd166), -0.8, 0, 0);
       g.add(top);
       g.userData.spin = top;
+      break;
+    }
+    case 'stairs': {
+      // Bodrum merdiveni (yalnızca görsel) ve tepede ışıklı kapı aralığı
+      for (let i = 0; i < 10; i++) add(g, new THREE.BoxGeometry(4, 0.4, 0.9), mat(0x8a6a4a), 0, 0.2 + i * 0.75, -0.45 - i * 0.9).scale.y = 1 + i * 1.9;
+      const light = add(g, new THREE.PlaneGeometry(2.4, 3), new THREE.MeshBasicMaterial({ color: 0xfff1b8 }), 0, 9.2, -8.9);
+      light.castShadow = false;
+      break;
+    }
+    case 'boiler': {
+      add(g, new THREE.CylinderGeometry(1.8, 1.9, 5, 14), mat(0x8a3f2a, { metalness: 0.4 }), 0, 2.5, 0);
+      const fire = add(g, new THREE.CircleGeometry(0.7, 12), new THREE.MeshBasicMaterial({ color: 0xff6a1a }), 0, 1.2, 1.91);
+      fire.castShadow = false;
+      for (let i = 0; i < 3; i++) add(g, new THREE.TorusGeometry(1.86, 0.08, 4, 18), mat(0x5a2a1a), 0, 1 + i * 1.6, 0).rotation.x = Math.PI / 2;
+      add(g, new THREE.CylinderGeometry(0.35, 0.35, 5, 8), mat(0x6b6f7a, { metalness: 0.5 }), 0, 7, 0);
+      const glow = new THREE.PointLight(0xff6a1a, 10, 10, 1.4);
+      glow.position.set(0, 1.4, 2.6);
+      g.add(glow);
+      break;
+    }
+    case 'pipes': {
+      const iron = mat(0x7a7f8c, { metalness: 0.5, roughness: 0.4 });
+      const L = spec.len || 10;
+      for (let i = 0; i < 3; i++) {
+        const pipe = add(g, new THREE.CylinderGeometry(0.15 + i * 0.05, 0.15 + i * 0.05, L, 8), i === 1 ? mat(0xc8553d) : iron, 0, i * 0.55, 0);
+        pipe.rotation.x = Math.PI / 2;
+      }
+      for (let k = 0; k < Math.floor(L / 3); k++) add(g, new THREE.BoxGeometry(0.3, 1.6, 0.3), iron, 0.1, 0.5, -L / 2 + 1.5 + k * 3);
+      break;
+    }
+    case 'bike': {
+      const red = mat(0xe8443a);
+      for (const sz of [-1, 1]) {
+        const wheel = add(g, new THREE.TorusGeometry(0.6, 0.06, 5, 16), mat(0x222222), 0, 0.65, sz * 0.9);
+        wheel.rotation.y = Math.PI / 2;
+      }
+      add(g, new THREE.BoxGeometry(0.08, 0.08, 1.6), red, 0, 1.1, 0).rotation.x = 0.2;
+      add(g, new THREE.BoxGeometry(0.3, 0.1, 0.5), mat(0x222222), 0, 1.4, -0.5);
+      break;
+    }
+    case 'sack': {
+      add(g, new THREE.SphereGeometry(0.7, 10, 8), mat(0xc2a878), 0, 0.6, 0).scale.y = 1.2;
+      for (let i = 0; i < 4; i++) add(g, new THREE.IcosahedronGeometry(0.18, 0), mat(0x222226), (i - 1.5) * 0.3, 0.12, 0.8);
       break;
     }
     case 'clock': {
