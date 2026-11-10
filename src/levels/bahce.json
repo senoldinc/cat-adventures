@@ -1,0 +1,143 @@
+{
+  "id": "bahce",
+  "name": "Bahçe",
+  "emoji": "🌻",
+  "spawn": [0, 0.2, 2.5],
+  "spawnYaw": 0,
+  "killY": -5,
+  "task": "🐾 Sebze bahçesine git, Dev Köstebeği bul!",
+  "theme": {
+    "outdoor": true,
+    "fenceH": 3.5,
+    "floor": "#8fd36b",
+    "floorLine": "#6fbf4f",
+    "floorTex": "grass",
+    "farGround": "#9ad977",
+    "wall": "#f4ead5",
+    "wallStripe": "#d9c9a8",
+    "sky": "#8fd3ff",
+    "music": "garden"
+  },
+  "room": { "minX": -12, "maxX": 12, "minZ": 0, "maxZ": 66, "height": 16 },
+  "boxes": [
+    { "p": [0, 0.1, 3], "s": [6, 0.2, 5], "look": "stone" },
+    { "p": [-10, 1.55, 3], "s": [0.6, 3.1, 0.6], "c": "#b5814a", "t": "climb" },
+    { "p": [-10, 3.25, 5.5], "s": [0.5, 0.3, 5], "w": 1, "look": "beam" },
+    { "p": [-10, 3.25, 10.5], "s": [0.5, 0.3, 3], "w": 1, "look": "beam" },
+    { "p": [-10, 3.25, 15], "s": [0.5, 0.3, 4], "w": 1, "look": "beam" },
+    { "p": [-10, 1.9, 19], "s": [2, 3.8, 2], "look": "birdbath" },
+    { "p": [-2, 0.5, 17], "s": [2, 1.0, 2], "t": "bouncy", "look": "sunflower" },
+    { "p": [0, 2.5, 20.75], "s": [24, 5, 1.5], "look": "hedge" },
+
+    { "p": [-8, 1.2, 33], "s": [3, 2.4, 3], "look": "kennel" },
+
+    { "p": [3.5, 1.3, 39.6], "s": [1.4, 2.6, 1.4], "look": "sunflower", "g": "flowers", "off": true, "grow": true },
+    { "p": [2.5, 2.4, 42.5], "s": [1.4, 4.8, 1.4], "look": "sunflower", "g": "flowers", "off": true, "grow": true },
+    { "p": [4.6, 3.4, 44.6], "s": [1.4, 6.8, 1.4], "look": "sunflower", "g": "flowers", "off": true, "grow": true },
+    { "p": [8, 3.6, 41], "s": [1.2, 7.2, 1.2], "look": "trunk" },
+    { "p": [8, 7.35, 41], "s": [4, 0.3, 4], "look": "treehouse" },
+
+    { "p": [-6.75, 1.75, 47.3], "s": [10.5, 3.5, 0.6], "look": "gardenfence" },
+    { "p": [6.75, 1.75, 47.3], "s": [10.5, 3.5, 0.6], "look": "gardenfence" },
+    { "p": [0, 1.75, 47.3], "s": [3, 3.5, 0.6], "look": "gate", "g": "gate", "off": true }
+  ],
+  "zones": [
+    { "type": "push", "p": [-10, 4.4, 10], "s": [2.4, 2.4, 1.4], "f": [5, 0, 0], "vis": "spray", "sweep": { "from": [-10, 4.4, 4.5], "to": [-10, 4.4, 16.5], "speed": 0.8 }, "toast": "💦 Fıskiye! Islandın, kaydın!" }
+  ],
+  "tunnels": [
+    { "a": [5, 0, 15], "b": [5, 0, 24] }
+  ],
+  "switches": [
+    { "id": "water", "type": "button", "p": [10.6, 0, 38.6], "c": "#5cc96b", "targets": [["flowers", true]], "toast": "💧 Çiçekler büyüyor! Ağaç evine çık!" }
+  ],
+  "props": [
+    { "type": "sprinkler", "p": [-7.5, 0, 10] },
+    { "type": "wateringcan", "p": [11.3, 0, 37.4] },
+    { "type": "flowers", "p": [3, 0, 7], "w": 4, "d": 1.5, "n": 9 },
+    { "type": "flowers", "p": [-5, 0, 24], "w": 5, "d": 1.2, "n": 9 },
+    { "type": "flowers", "p": [9, 0, 25], "w": 3, "d": 1.2, "n": 6 },
+    { "type": "flowers", "p": [-2, 0, 44], "w": 4, "d": 1.2, "n": 7 },
+    { "type": "veggies", "p": [0, 0, 50], "n": 6 },
+    { "type": "veggies", "p": [-1, 0, 65], "n": 8 },
+    { "type": "scarecrow", "p": [10, 0, 57] },
+    { "type": "butterfly", "p": [2, 2, 8], "r": 2, "c": "#ff9db8" },
+    { "type": "butterfly", "p": [-5, 2.5, 30], "r": 3, "speed": 0.6, "c": "#ffd166" },
+    { "type": "butterfly", "p": [6, 3, 55], "r": 2.5, "phase": 2, "c": "#b56fd6" },
+    { "type": "butterfly", "p": [8, 5, 41], "r": 3.5, "speed": 0.5, "c": "#5ab0e8" }
+  ],
+  "kibble": [
+    { "ring": [0, 0.7, 3], "r": 1.2, "n": 6 },
+    { "line": [[-10, 1, 2.2], [-10, 2.8, 2.2]], "n": 3 },
+    { "line": [[-10, 3.9, 4], [-10, 3.9, 16.5]], "n": 9 },
+    { "line": [[-4, 0.5, 4], [-4, 0.5, 14]], "n": 5 },
+    { "line": [[8, 0.5, 4], [8, 0.5, 14]], "n": 5 },
+    { "line": [[3, 0.5, 11], [5, 0.5, 13.6]], "n": 3 },
+    { "arc": [[-2, 1.6, 17], [-2, 5.6, 20.75]], "h": 1.5, "n": 4 },
+    { "line": [[-8, 5.6, 20.75], [8, 5.6, 20.75]], "n": 9 },
+    { "line": [[-6, 0.5, 23], [6, 0.5, 23]], "n": 5 },
+    { "line": [[-10.5, 0.5, 28], [-10.5, 0.5, 36]], "n": 5 },
+    { "line": [[6, 0.5, 28], [6, 0.5, 36]], "n": 5 },
+    [3.5, 3.2, 39.6],
+    [2.5, 5.4, 42.5],
+    [4.6, 7.4, 44.6],
+    { "ring": [8, 8.1, 41], "r": 1.4, "n": 6 },
+    { "ring": [10.6, 1.2, 38.6], "r": 0.8, "n": 4 },
+    { "line": [[-6, 0.5, 40], [-1, 0.5, 45]], "n": 5 },
+    { "line": [[-9, 0.5, 50], [-9, 0.5, 64]], "n": 6 },
+    { "line": [[9, 0.5, 50], [9, 0.5, 64]], "n": 6 },
+    { "ring": [0, 0.5, 61], "r": 2, "n": 8 }
+  ],
+  "bones": [
+    [-10, 4.4, 19],
+    [-8, 0.6, 35.5],
+    [9, 8.1, 42.2]
+  ],
+  "bell": [0, 1.3, 57],
+  "bellHidden": true,
+  "door": { "p": [0, 1, 65.85], "s": [2.2, 2, 0.3] },
+  "checkpoints": [
+    [0, 0, 24.5],
+    [-4, 0, 40]
+  ],
+  "boss": {
+    "type": "mole",
+    "name": "🐾 Dev Köstebek",
+    "p": [0, 0, 57],
+    "holes": [[-6, 0, 52], [6, 0, 52], [0, 0, 57], [-6, 0, 62], [6, 0, 62]],
+    "arena": [-11, 48.2, 11, 65.4],
+    "respawn": [0, 0, 49.6],
+    "intro": "🐾 Dev Köstebek! Toprak titreyince oraya koş, çıkınca pati at!",
+    "tip": "🐾 Köstebek çıkınca pati at ya da üstüne zıpla!",
+    "task": "🐾 Köstebek çıkınca vur! Kırmızı halkalardan kaç!",
+    "outro": "🎉 Dev Köstebek yenildi! Altın çanı al!"
+  },
+  "enemies": [
+    { "type": "dog", "p": [-3, 0, 32], "yaw": 3.1416, "area": [-12, 27, 12, 37], "sleep": 4, "pushZ": -1 },
+    { "type": "roamer", "area": [7, 5, 11, 12] }
+  ],
+  "hints": [
+    { "p": [0, 0.2, 3.5], "icon": "🌻", "text": "Bahçe! Çitin üstünden, ayçiçeğinden ya da tünelden geç." },
+    { "p": [-10, 0, 1.6], "icon": "🧗", "text": "Direğe doğru yürü: tırman! Sonra çitin üstünde yürü." },
+    { "p": [-10, 3.4, 6.5], "icon": "💦", "text": "Fıskiye geçince koş!" },
+    { "p": [5, 0, 13.2], "icon": "🕳️", "text": "Deliğe gir: hop, öbür tarafta!" },
+    { "p": [-2, 0, 15.2], "icon": "🌻", "text": "Ayçiçeğinde zıpla, havada bir daha bas: çalının üstüne!" },
+    { "p": [0, 0, 25.6], "icon": "🐶", "text": "Köpek uyurken (💤) koş! Bakarken (👀) dur!" },
+    { "p": [10.2, 0, 40.2], "icon": "💧", "text": "Sulama düğmesine F ile pati at!", "touch": "Sulama düğmesine B ile pati at!" },
+    { "p": [1.6, 0, 40.4], "icon": "🌳", "text": "Büyüyen çiçeklerden ağaç evine zıpla!" },
+    { "p": [0, 0, 45.6], "icon": "🐾", "text": "Kapıdan gir: Dev Köstebek seni bekliyor!" },
+    { "p": [7.2, 7.5, 41.8], "icon": "⏱️", "text": "Zor Parkur! Halkaya bas, köpeğin üstünden mor bayrağa!" }
+  ],
+  "challenge": {
+    "start": [7.2, 7.5, 40.2],
+    "timeLimit": 22,
+    "reward": "hat_straw",
+    "platforms": [
+      { "p": [4.2, 7.75, 36.5], "s": [2, 0.3, 2] },
+      { "p": [0.8, 8.15, 34.5], "s": [2, 0.3, 2] },
+      { "p": [-2.6, 8.55, 32.5], "s": [2, 0.3, 2] },
+      { "p": [-6, 8.95, 30.5], "s": [2, 0.3, 2] },
+      { "p": [-9, 9.35, 27.5], "s": [2.6, 0.3, 2.6] }
+    ],
+    "goal": [-9, 9.5, 27.5]
+  }
+}

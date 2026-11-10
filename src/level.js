@@ -1,7 +1,7 @@
 // JSON'dan oda kurar: kutular (fizik + görsel), hareketli platformlar, su, dekor, toplanabilirler, düşmanlar.
 import * as THREE from 'three';
 import { World } from './physics.js';
-import { boxMesh, decorateBox, buildProp, plankTexture, stripeTexture, checkerTexture, tileTexture, mat } from './props.js';
+import { boxMesh, decorateBox, buildProp, plankTexture, stripeTexture, checkerTexture, tileTexture, grassTexture, fenceTexture, mat } from './props.js';
 import { KibbleField, expandKibble, Pickup } from './entities/collectibles.js';
 import { Checkpoint, CatDoor, ChallengePad } from './entities/checkpoint.js';
 import { createEnemy } from './entities/enemies.js';
@@ -47,6 +47,8 @@ export class Level {
     this.convs = [];
     this.floats = [];
     this.waterMeshes = [];
+    this.spinners = [];
+    this.flyers = [];
     this.t = 0;
 
     this.buildRoom();
@@ -91,7 +93,28 @@ export class Level {
       this.root.add(g);
       if (g.userData.bob) this.bobbers.push(g);
       if (g.userData.clockHand) this.clockHand = g.userData.clockHand;
+      if (g.userData.spin) this.spinners.push(g.userData.spin);
+      if (g.userData.fly) this.flyers.push(g);
     }
+
+    // Köstebek tünelleri: iki delik arasında ışınlanma
+    this.tunnels = (data.tunnels || []).map((tn) => {
+      const ends = [tn.a, tn.b].map((pt) => {
+        const g = new THREE.Group();
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 6, 16), mat(0x8a5a32));
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.08;
+        g.add(ring);
+        const hole = new THREE.Mesh(new THREE.CircleGeometry(0.72, 16), new THREE.MeshBasicMaterial({ color: 0x1d130c }));
+        hole.rotation.x = -Math.PI / 2;
+        hole.position.y = 0.03;
+        g.add(hole);
+        g.position.set(...pt);
+        this.root.add(g);
+        return new THREE.Vector3(...pt);
+      });
+      return { a: ends[0], b: ends[1] };
+    });
 
     this.kibble = new KibbleField(this.root, expandKibble(data.kibble || []));
     this.bones = data.bones.map((p, i) => new Pickup(this.root, 'bone', p, i, saveData.bones[i]));
@@ -132,11 +155,13 @@ export class Level {
     const cx = (room.minX + room.maxX) / 2, cz = (room.minZ + room.maxZ) / 2;
     const T = 1;
 
-    const floorTex = theme.floorTex === 'checker' ? checkerTexture(theme.floor, theme.floorLine)
+    const floorTex = theme.floorTex === 'grass' ? grassTexture(theme.floor, theme.floorLine)
+      : theme.floorTex === 'checker' ? checkerTexture(theme.floor, theme.floorLine)
       : theme.floorTex === 'tile' ? tileTexture(theme.floor, theme.floorLine)
         : plankTexture(theme.floor, theme.floorLine);
     floorTex.repeat.set(W / 4, D / 4);
-    const floor = new THREE.Mesh(new THREE.BoxGeometry(W + 2, T, D + 2), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.7 }));
+    if (theme.floorTex === 'grass') floorTex.repeat.set(W / 6, D / 6);
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(W + 2, T, D + 2), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.9 }));
     floor.position.set(cx, -T / 2, cz);
     floor.receiveShadow = true;
     this.root.add(floor);
@@ -155,12 +180,24 @@ export class Level {
       [cx, H / 2, room.minZ - T / 2, W, H, T, wallMatB],
       [cx, H / 2, room.maxZ + T / 2, W, H, T, wallMatB],
     ];
+    if (theme.outdoor) {
+      // Açık hava: görünen yalnızca alçak bir tahta çit; fizik duvarları yine tam yükseklikte (görünmez)
+      const fh = theme.fenceH || 3.5;
+      const fenceA = new THREE.MeshStandardMaterial({ map: fenceTexture(theme.wall, theme.wallStripe, D), roughness: 0.85, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
+      const fenceB = new THREE.MeshStandardMaterial({ map: fenceTexture(theme.wall, theme.wallStripe, W), roughness: 0.85, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide });
+      walls.forEach((wl, i) => { wl[4] = fh; wl[1] = fh / 2; wl[6] = i < 2 ? fenceA : fenceB; });
+      this.buildOutdoor(theme, cx, cz, W, D);
+    }
     for (const [x, y, z, w, h, d, m] of walls) {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
-      mesh.position.set(x, y, z);
+      const mesh = new THREE.Mesh(theme.outdoor ? new THREE.PlaneGeometry(w === T ? d : w, h) : new THREE.BoxGeometry(w, h, d), m);
+      if (theme.outdoor && w === T) mesh.rotation.y = Math.PI / 2;
+      mesh.position.set(x + (theme.outdoor && w === T ? (x < cx ? T / 2 : -T / 2) : 0), y, z + (theme.outdoor && d === T ? (z < cz ? T / 2 : -T / 2) : 0));
       mesh.receiveShadow = true;
+      mesh.castShadow = !!theme.outdoor;
       this.root.add(mesh);
-      this.world.add({ minX: x - w / 2, maxX: x + w / 2, minY: y - h / 2 - 1, maxY: y + h / 2 + 1, minZ: z - d / 2, maxZ: z + d / 2, kind: 'wall' });
+      const top = theme.outdoor ? H + 1 : y + h / 2 + 1;
+      this.world.add({ minX: x - w / 2, maxX: x + w / 2, minY: -1, maxY: top, minZ: z - d / 2, maxZ: z + d / 2, kind: 'wall' });
+      if (theme.outdoor) continue;
       // Süpürgelik
       const bw = w === T ? 0.12 : w, bd = d === T ? 0.12 : d;
       const base = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.5, bd), mat(0xffffff));
@@ -172,10 +209,55 @@ export class Level {
       );
       this.root.add(base);
     }
-    const ceil = new THREE.Mesh(new THREE.BoxGeometry(W + 2, T, D + 2), mat(theme.ceiling));
-    ceil.position.set(cx, H + T / 2, cz);
-    this.root.add(ceil);
+    if (!theme.outdoor) {
+      const ceil = new THREE.Mesh(new THREE.BoxGeometry(W + 2, T, D + 2), mat(theme.ceiling));
+      ceil.position.set(cx, H + T / 2, cz);
+      this.root.add(ceil);
+    }
     this.world.add({ minX: room.minX - 1, maxX: room.maxX + 1, minY: H, maxY: H + T, minZ: room.minZ - 1, maxZ: room.maxZ + 1, kind: 'ceiling' });
+  }
+
+  // Çitin ötesi: geniş çim, uzak ağaçlar, bulutlar, güneş
+  buildOutdoor(theme, cx, cz, W, D) {
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(260, 260), mat(theme.farGround || 0x8fd36b));
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.set(cx, -0.02, cz);
+    ground.receiveShadow = true;
+    this.root.add(ground);
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const leaf = [0x4caf50, 0x66c26a, 0x3f9c4a];
+    for (let i = 0; i < 28; i++) {
+      const a = (i / 28) * Math.PI * 2 + rnd() * 0.2;
+      const r = Math.max(W, D) * 0.5 + 8 + rnd() * 18;
+      const x = cx + Math.cos(a) * r * (W / Math.max(W, D) + 0.3), z = cz + Math.sin(a) * r;
+      const tree = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 3, 6), mat(0x8a5a32));
+      trunk.position.y = 1.5;
+      tree.add(trunk);
+      const top = new THREE.Mesh(new THREE.IcosahedronGeometry(2.4 + rnd() * 1.5, 0), mat(leaf[i % 3]));
+      top.position.y = 4.5;
+      tree.add(top);
+      tree.position.set(x, 0, z);
+      tree.scale.setScalar(1 + rnd() * 0.8);
+      this.root.add(tree);
+    }
+    if (theme.night) return;
+    for (let i = 0; i < 9; i++) {
+      const cloud = new THREE.Group();
+      for (let k = 0; k < 4; k++) {
+        const puff = new THREE.Mesh(new THREE.IcosahedronGeometry(1.6 + rnd(), 1), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        puff.position.set(k * 1.8 - 2.7, rnd() * 0.8, rnd() * 1.2);
+        cloud.add(puff);
+      }
+      cloud.position.set(cx + (rnd() - 0.5) * 120, 26 + rnd() * 10, cz + (rnd() - 0.5) * 140);
+      cloud.userData.drift = 0.3 + rnd() * 0.4;
+      this.root.add(cloud);
+      this.flyers.push(cloud);
+    }
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 10), new THREE.MeshBasicMaterial({ color: 0xfff1a8 }));
+    sun.position.set(cx + 50, 60, cz - 60);
+    this.root.add(sun);
   }
 
   addBox(spec) {
@@ -197,6 +279,7 @@ export class Level {
     this.root.add(mesh);
     box.mesh = mesh;
     if (box.widen) this.widenables.push(box);
+    if (spec.grow) box.grow = true;
     if (spec.conv) {
       box.conv = spec.conv;
       this.convs.push(box);
@@ -223,7 +306,7 @@ export class Level {
       if (on) {
         b.mesh.visible = true;
         b.mesh.scale.setScalar(0.01);
-        this.pops.push({ mesh: b.mesh, t: -i * 0.12 });
+        this.pops.push({ mesh: b.mesh, t: -i * (b.grow ? 0.45 : 0.12), grow: b.grow ? { minY: b.minY, h: b.maxY - b.minY } : null });
         pts.push({ x: b.mesh.position.x, y: b.maxY, z: b.mesh.position.z });
       } else {
         b.mesh.visible = false;
@@ -384,7 +467,26 @@ export class Level {
     for (const b of this.bobbers) { b.position.y = 0.12 + Math.sin(t * 2 + b.position.x) * 0.05; b.rotation.y = Math.sin(t * 0.5 + b.position.z) * 0.6; }
     if (this.clockHand) this.clockHand.rotation.z = -t * 0.5;
     for (const m of this.waterMeshes) m.material.color.setHSL(0.56, 0.8, 0.68 + Math.sin(t * 1.5) * 0.03);
+    for (const sp of this.spinners) sp.rotation.y += dt * 3;
+    for (const f of this.flyers) {
+      if (f.userData.drift) { f.position.x += f.userData.drift * dt; continue; }
+      const u = f.userData.fly;
+      const a = t * u.speed + u.phase;
+      f.position.set(u.c[0] + Math.cos(a) * u.r, u.c[1] + Math.sin(a * 2.3) * 0.5, u.c[2] + Math.sin(a) * u.r);
+      f.rotation.y = -a;
+      f.children.forEach((w, i) => { if (i) w.rotation.z = Math.sin(t * 18) * 0.8 * (i === 1 ? 1 : -1); });
+    }
     for (const z of this.zones) {
+      if (z.sweep) {
+        // Fıskiye: bölge iki nokta arasında gidip gelir
+        const sw = z.sweep;
+        const u = (Math.sin(t * sw.speed + (sw.phase || 0)) + 1) / 2;
+        const zx = sw.from[0] + (sw.to[0] - sw.from[0]) * u, zz = sw.from[2] + (sw.to[2] - sw.from[2]) * u;
+        const b = z.box;
+        const hw = (b.maxX - b.minX) / 2, hd = (b.maxZ - b.minZ) / 2;
+        b.minX = zx - hw; b.maxX = zx + hw; b.minZ = zz - hd; b.maxZ = zz + hd;
+        if (z.head) z.head.rotation.y = Math.atan2(zx - z.head.parent.position.x, zz - z.head.parent.position.z);
+      }
       z.on = !z.period || ((t + (z.phase || 0)) % (z.period[0] + z.period[1])) < z.period[0];
       if (z.mesh) {
         z.mesh.visible = z.on;
@@ -399,6 +501,15 @@ export class Level {
       const pp = this.pops[i];
       pp.t += dt;
       const k = Math.max(0, Math.min(1, pp.t / 0.35));
+      if (pp.grow) {
+        // Yerden büyüyerek çıkar (çiçek sapı gibi)
+        const gk = Math.max(0, Math.min(1, pp.t / 1.0));
+        const sy = Math.max(0.01, gk < 1 ? gk + Math.sin(gk * Math.PI) * 0.12 : 1);
+        pp.mesh.scale.set(1, sy, 1);
+        pp.mesh.position.y = pp.grow.minY + (pp.grow.h * sy) / 2;
+        if (gk >= 1) this.pops.splice(i, 1);
+        continue;
+      }
       const s = k < 1 ? Math.max(0.01, k + Math.sin(k * Math.PI) * 0.35) : 1;
       pp.mesh.scale.set(s, s, s);
       if (k >= 1) this.pops.splice(i, 1);

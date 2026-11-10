@@ -261,7 +261,261 @@ export class KingMouse extends Boss {
   }
 }
 
+// Yay çizerek uçan toprak topu; düşeceği yerde kırmızı halka uyarır.
+class DirtBall {
+  constructor(scene, from, to, flight) {
+    this.scene = scene;
+    this.from = from.clone();
+    this.to = to.clone();
+    this.flight = flight;
+    this.t = 0;
+    this.ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), mat(0x7a4a2a));
+    this.ball.castShadow = true;
+    scene.add(this.ball);
+    this.ring = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.85, 20), new THREE.MeshBasicMaterial({ color: 0xff4d4d, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false }));
+    this.ring.rotation.x = -Math.PI / 2;
+    this.ring.position.set(to.x, 0.04, to.z);
+    scene.add(this.ring);
+    this.pos = this.from.clone();
+  }
+  // true: yere düştü
+  update(dt) {
+    this.t += dt;
+    const u = Math.min(1, this.t / this.flight);
+    this.pos.lerpVectors(this.from, this.to, u);
+    this.pos.y += Math.sin(u * Math.PI) * 4;
+    this.ball.position.copy(this.pos);
+    this.ball.rotation.x += dt * 8;
+    this.ring.scale.setScalar(1.2 - u * 0.4);
+    this.ring.material.opacity = 0.4 + Math.sin(this.t * 20) * 0.3;
+    return u >= 1;
+  }
+  remove() { this.scene.remove(this.ball); this.scene.remove(this.ring); }
+}
+
+// Dev Köstebek Topaç: tümseklerden birinde toprak titrer → çıkar (vurulabilir) → vurulmazsa toprak topu atar → dalar.
+export class Mole extends Boss {
+  constructor(scene, spec, world) {
+    super(scene, spec, world);
+    this.name = spec.name || 'Dev Köstebek';
+    this.hw = 0.8; this.h = 1.4;
+    const fur = mat(0x6b4a3a), pink = mat(0xff9db8);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 8), fur);
+    body.scale.set(1, 1.1, 0.95);
+    body.position.y = 0.8;
+    this.model.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.6, 10, 6), mat(0xc79a7a));
+    belly.position.set(0, 0.7, 0.45);
+    belly.scale.set(1, 1.1, 0.6);
+    this.model.add(belly);
+    const nose = new THREE.Group();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      const n = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 4), pink);
+      n.position.set(Math.cos(a) * 0.13, Math.sin(a) * 0.13, 0);
+      nose.add(n);
+    }
+    nose.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 4), pink));
+    nose.position.set(0, 1.25, 0.85);
+    this.model.add(nose);
+    // Yuvarlak gözlük
+    for (const sgn of [-1, 1]) {
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.03, 5, 12), mat(0x222222));
+      rim.position.set(0.22 * sgn, 1.5, 0.72);
+      this.model.add(rim);
+      const eyeM = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 4), mat(0x111111));
+      eyeM.position.set(0.22 * sgn, 1.5, 0.74);
+      this.model.add(eyeM);
+    }
+    this.claws = [];
+    for (const sgn of [-1, 1]) {
+      const claw = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 6), pink);
+      claw.scale.set(1.2, 0.5, 0.8);
+      claw.position.set(0.75 * sgn, 0.9, 0.55);
+      this.model.add(claw);
+      this.claws.push(claw);
+    }
+    // Baret
+    const hat = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), mat(0xffc23d));
+    hat.position.y = 1.62;
+    this.model.add(hat);
+
+    this.stars = dizzyStars();
+    this.stars.scale.setScalar(1.6);
+    this.stars.position.y = 2.2;
+    this.g.add(this.stars);
+
+    // Tümsekler
+    this.holes = spec.holes.map((h) => new THREE.Vector3(...h));
+    this.mounds = this.holes.map((h) => {
+      const m = new THREE.Group();
+      const dirt = new THREE.Mesh(new THREE.SphereGeometry(1.0, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), mat(0x8a5a32));
+      dirt.scale.y = 0.45;
+      m.add(dirt);
+      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.55, 14), new THREE.MeshBasicMaterial({ color: 0x2b1d14 }));
+      hole.rotation.x = -Math.PI / 2;
+      hole.position.y = 0.46;
+      m.add(hole);
+      m.position.copy(h);
+      m.traverse((o) => { if (o.isMesh) o.receiveShadow = true; });
+      scene.add(m);
+      return m;
+    });
+    // Sahte tümsekten çıkan solucan
+    this.worm = new THREE.Group();
+    for (let i = 0; i < 4; i++) {
+      const seg = new THREE.Mesh(new THREE.SphereGeometry(0.16 - i * 0.02, 8, 6), mat(0xff8fab));
+      seg.position.y = i * 0.22;
+      this.worm.add(seg);
+    }
+    const wEye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 4, 4), mat(0x111111));
+    wEye.position.set(0.06, 0.7, 0.1);
+    this.worm.add(wEye);
+    this.worm.visible = false;
+    scene.add(this.worm);
+
+    this.balls = [];
+    this.hole = 2;
+    this.pos.copy(this.holes[this.hole]);
+    this.depth = -2.2; // yer altında
+    this.state = 'idle';
+    this.stateT = 0;
+    this.finish();
+  }
+
+  // Yalnızca dışarıdayken vurulabilir/çarpışır
+  get stunned() { return this.state === 'up'; }
+  aabb() {
+    if (this.state !== 'up' && this.state !== 'throw') return { minX: 1e6, maxX: 1e6 + 1, minY: 1e6, maxY: 1e6 + 1, minZ: 1e6, maxZ: 1e6 + 1 };
+    return super.aabb();
+  }
+  hitPlayer() {}
+
+  start() {
+    super.start();
+    this.enter('hidden', 1.0);
+    this.events.roar?.();
+  }
+
+  enter(state, t) {
+    this.state = state;
+    this.stateT = t;
+    this.stars.visible = false;
+  }
+
+  takeHit() {
+    const hp = super.takeHit();
+    this.stars.visible = true;
+    this.state = 'dive';
+    this.stateT = 0.6;
+    return hp;
+  }
+
+  update(dt, speedK, player) {
+    this.t += dt;
+    this.stateT -= dt;
+    this.tickFlash(dt);
+    const helper = speedK < 1;
+    let target = -2.2;
+
+    switch (this.state) {
+      case 'idle':
+        // Savaş başlamadan ortadaki tümsekten arada bir bakar
+        target = Math.sin(this.t * 0.8) > 0.6 ? -0.9 : -2.2;
+        break;
+      case 'hidden':
+        if (this.stateT <= 0) {
+          let next = this.hole;
+          while (next === this.hole) next = Math.floor(Math.random() * this.holes.length);
+          this.hole = next;
+          this.pos.copy(this.holes[next]);
+          this.fake = -1;
+          if (this.hp === 1) {
+            // Son canda iki tümsek titrer, biri sahte (solucan çıkar)
+            let f = next;
+            while (f === next) f = Math.floor(Math.random() * this.holes.length);
+            this.fake = f;
+          }
+          this.enter('warn', helper ? 1.2 : 0.8);
+        }
+        break;
+      case 'warn':
+        // Titreyen tümsek + toprak parçacıkları
+        for (const i of [this.hole, this.fake]) {
+          if (i < 0) continue;
+          const m = this.mounds[i];
+          m.rotation.z = Math.sin(this.t * 40) * 0.08;
+          m.scale.setScalar(1 + Math.abs(Math.sin(this.t * 20)) * 0.1);
+          if (Math.random() < dt * 12) this.events.dirt?.(this.holes[i]);
+        }
+        if (this.stateT <= 0) {
+          this.mounds.forEach((m) => { m.rotation.z = 0; m.scale.setScalar(1); });
+          if (this.fake >= 0) { this.worm.visible = true; this.worm.position.copy(this.holes[this.fake]).setY(0.2); }
+          this.enter('up', (this.hp >= 3 ? 2.2 : 1.6) * (helper ? 1.5 : 1));
+          this.events.pop?.();
+        }
+        break;
+      case 'up':
+        target = 0;
+        this.face(player);
+        if (this.stateT <= 0) { this.enter('throw', 0.7); this.throwBalls(player, helper); }
+        break;
+      case 'throw':
+        target = 0;
+        this.claws.forEach((c, i) => { c.position.y = 0.9 + Math.sin(this.t * 20 + i) * 0.3; });
+        if (this.stateT <= 0) this.enter('dive', 0.5);
+        break;
+      case 'dive':
+        target = -2.2;
+        if (this.stateT <= 0) { this.worm.visible = false; this.stars.visible = false; this.enter('hidden', helper ? 2.0 : 1.4); }
+        break;
+    }
+    this.depth += (target - this.depth) * Math.min(1, dt * (target > this.depth ? 10 : 6));
+    this.model.position.y = this.depth;
+    this.model.visible = this.depth > -2.0;
+    this.g.position.copy(this.pos);
+    if (this.stars.visible) this.stars.rotation.y += dt * 6;
+    if (this.worm.visible) this.worm.rotation.z = Math.sin(this.t * 6) * 0.3;
+
+    // Toprak topları
+    for (let i = this.balls.length - 1; i >= 0; i--) {
+      const b = this.balls[i];
+      const landed = b.update(dt);
+      const p = player.pos;
+      const near = (b.pos.x - p.x) ** 2 + (b.pos.z - p.z) ** 2 < 0.8 && b.pos.y < p.y + 1 && b.pos.y > p.y - 0.4;
+      if (near && player.hurtT <= 0) { this.events.hurtPlayer?.(b.pos.x, b.pos.z); b.t = b.flight; }
+      if (landed || near) {
+        this.events.splat?.(b.pos);
+        b.remove();
+        this.balls.splice(i, 1);
+      }
+    }
+  }
+
+  face(player) {
+    const dx = player.pos.x - this.pos.x, dz = player.pos.z - this.pos.z;
+    this.g.rotation.y = Math.atan2(dx, dz);
+  }
+
+  throwBalls(player, helper) {
+    const p = player.pos;
+    const from = new THREE.Vector3(this.pos.x, 1.6, this.pos.z);
+    const targets = [new THREE.Vector3(p.x, 0, p.z)];
+    if (!helper) targets.push(new THREE.Vector3(p.x + player.vel.x * 0.9 + (Math.random() - 0.5) * 2, 0, p.z + player.vel.z * 0.9 + (Math.random() - 0.5) * 2));
+    for (const t of targets) this.balls.push(new DirtBall(this.scene, from, t, 1.2));
+    this.events.throw?.();
+  }
+
+  kill() {
+    super.kill();
+    for (const b of this.balls) b.remove();
+    this.balls.length = 0;
+    this.worm.visible = false;
+  }
+}
+
 export function createBoss(scene, spec, world) {
   if (spec.type === 'kingmouse') return new KingMouse(scene, spec, world);
+  if (spec.type === 'mole') return new Mole(scene, spec, world);
   return null;
 }

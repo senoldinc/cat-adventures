@@ -14,6 +14,7 @@ export const ITEMS = [
   { id: 'hat_party', slot: 'hat', name: 'Parti Şapkası', icon: '🥳', price: 40 },
   { id: 'hat_top', slot: 'hat', name: 'Silindir', icon: '🎩', price: 70 },
   { id: 'hat_crown', slot: 'hat', name: 'Taç', icon: '👑', price: 120 },
+  { id: 'hat_straw', slot: 'hat', name: 'Hasır Şapka', icon: '👒', price: null, reward: 'Bahçe Zor Parkuru' },
   { id: 'hat_chef', slot: 'hat', name: 'Aşçı Şapkası', icon: '👨‍🍳', price: null, reward: 'Mutfak Zor Parkuru' },
   { id: 'scarf_red', slot: 'scarf', name: 'Kırmızı Fular', icon: '🧣', price: 30 },
   { id: 'scarf_blue', slot: 'scarf', name: 'Mavi Fular', icon: '💙', price: 30 },

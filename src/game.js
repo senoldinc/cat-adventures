@@ -124,7 +124,7 @@ export class Game {
     this.sun.position.set(cx + 14, r.height + 22, cz - 10);
     this.sun.target.position.set(cx, 0, cz);
 
-    for (const e of this.level.enemies) e.events = { squeak: () => sfx.squeak(), alert: () => sfx.alert() };
+    for (const e of this.level.enemies) e.events = { squeak: () => sfx.squeak(), alert: () => sfx.alert(), stir: () => sfx.sniff() };
     const boss = this.level.boss;
     if (boss) {
       boss.events = {
@@ -133,6 +133,11 @@ export class Game {
         charge: () => sfx.charge(),
         bonk: () => { sfx.bonk(); this.effects.burst({ x: boss.pos.x, y: boss.pos.y + 0.8, z: boss.pos.z }, { color: 0xffe066, count: 8, speed: 3, size: 0.12, life: 0.5 }); },
         spawn: (n) => this.spawnMinions(n),
+        dirt: (pt) => this.effects.burst({ x: pt.x, y: 0.4, z: pt.z }, { color: 0x8a5a32, count: 2, speed: 2.5, size: 0.12, life: 0.5, gravity: 10, up: 3 }),
+        pop: () => { sfx.pop(); this.effects.burst({ x: boss.pos.x, y: 0.5, z: boss.pos.z }, { color: 0x8a5a32, count: 12, speed: 4, size: 0.16, life: 0.6, gravity: 12, up: 3 }); },
+        throw: () => sfx.throw(),
+        splat: (pt) => { sfx.splat(); this.effects.burst({ x: pt.x, y: 0.2, z: pt.z }, { color: 0x7a4a2a, count: 10, speed: 3, size: 0.14, life: 0.5, gravity: 10, up: 2 }); },
+        hurtPlayer: (x, z) => this.hurt(x, z),
       };
     }
     setMusic(data.theme.music || 'salon');
@@ -342,6 +347,12 @@ export class Game {
     for (const e of level.enemies) {
       if (!e.alive) continue;
       e.update(dt, speedK, player);
+      if (e.passive) {
+        // Uyuyan köpek: bakarken bahçesinde koşan/zıplayan kediye havlar
+        const moving = Math.hypot(player.vel.x, player.vel.z) > 1.2 || !player.grounded;
+        if (e.watching && e.inArea(p) && moving) this.bark(e);
+        continue;
+      }
       const box = e.aabb();
 
       // Pati isabeti (her savuruşta bir düşmana bir kez)
@@ -371,6 +382,7 @@ export class Game {
     }
 
     if (level.boss?.alive) this.updateBoss(dt, speedK, paw, pBox, input);
+    this.updateTunnels();
 
     // Su ve boşluğa düşme
     if (level.inWater(p, player.hw * 0.6)) {
@@ -498,6 +510,47 @@ export class Game {
     }
   }
 
+  bark(dog) {
+    const player = this.player;
+    dog.barked();
+    sfx.bark();
+    // Bahçenin girişine doğru savrulur (can gitmez)
+    const a = dog.area;
+    const back = dog.spec.pushZ ?? -1;
+    player.vel.x = 0;
+    player.vel.z = back * 10;
+    player.vel.y = 7;
+    player.grounded = false;
+    player.climbing = false;
+    player.hurtT = 0.8;
+    this.effects.burst({ x: dog.pos.x, y: 1.8, z: dog.pos.z + 1 }, { color: 0xffffff, count: 6, speed: 3, size: 0.12, life: 0.4 });
+    this.hud.toast(dog.spec.toast || '🐶 Hav! Köpek uyurken geç!', 1.8);
+    void a;
+  }
+
+  // Köstebek tünelleri: deliğe basınca öbür uçtan çık
+  updateTunnels() {
+    const player = this.player, p = player.pos;
+    if (this.tunnelLock) {
+      if ((p.x - this.tunnelLock.x) ** 2 + (p.z - this.tunnelLock.z) ** 2 > 1.6) this.tunnelLock = null;
+      return;
+    }
+    for (const tn of this.level.tunnels) {
+      for (const [from, to] of [[tn.a, tn.b], [tn.b, tn.a]]) {
+        if (Math.abs(p.y - from.y) < 0.4 && (p.x - from.x) ** 2 + (p.z - from.z) ** 2 < 0.45) {
+          this.effects.poof({ x: p.x, y: p.y + 0.2, z: p.z });
+          p.x = to.x; p.y = to.y + 0.01; p.z = to.z;
+          player.vel.x = player.vel.z = 0;
+          this.effects.poof({ x: to.x, y: to.y + 0.3, z: to.z });
+          sfx.teleport();
+          this.tunnelLock = to;
+          this.cam.snap(p, this.cam.yaw);
+          return;
+        }
+      }
+    }
+  }
+
   // İtme bölgeleri (musluk suyu) ve ortam kabarcıkları
   updateZones(dt) {
     const level = this.level, player = this.player, p = player.pos;
@@ -511,6 +564,9 @@ export class Game {
         if (z.f[0]) moveAxis(level.world, player, 'x', z.f[0] * dt, false);
         if (z.f[2]) moveAxis(level.world, player, 'z', z.f[2] * dt, false);
         if (!this.pushT || this.now - this.pushT > 0.6) { sfx.splash(); this.pushT = this.now; if (z.toast) this.hud.toast(z.toast, 1.3); }
+      }
+      if (tick && z.vis === 'spray') {
+        for (let k = 0; k < 3; k++) this.effects.burst({ x: b.minX + Math.random() * (b.maxX - b.minX), y: b.maxY - 0.3, z: b.minZ + Math.random() * (b.maxZ - b.minZ) }, { color: 0x8fd3ff, count: 1, speed: 1, size: 0.09, life: 0.5, gravity: 8, up: 0.5 });
       }
       if (tick && z.vis === 'stream') this.effects.burst({ x: (b.minX + b.maxX) / 2, y: b.minY + 0.1, z: (b.minZ + b.maxZ) / 2 }, { color: 0x8fd3ff, count: 2, speed: 2, size: 0.08, life: 0.4, gravity: 10, up: 2 });
     }
@@ -605,6 +661,8 @@ export class Game {
     setMusic('boss');
     this.hud.setBoss(boss.name, boss.hp, boss.maxHp);
     if (boss.spec.intro) this.hud.toast(boss.spec.intro, 3.2);
+    // Arena kapısı kapanırsa dışarıda doğmamak için kayıt noktası arenaya taşınır
+    if (boss.spec.respawn) { const [x, y, z] = boss.spec.respawn; this.run.checkpoint = { x, y, z }; }
     this.setGroup('gate', true);
   }
 

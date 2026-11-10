@@ -146,6 +146,12 @@ export const sfx = {
   bossRoar() { [0, 0.18, 0.36].forEach((d, i) => tone({ type: 'sawtooth', f0: 420 - i * 40, f1: 700 - i * 60, dur: 0.16, vol: 0.08, delay: d })); },
   charge() { noise({ dur: 0.35, vol: 0.12, freq: 600, f1: 1800, q: 1.5 }); },
   bossHit() { tone({ type: 'square', f0: 900, f1: 300, dur: 0.25, vol: 0.12 }); tone({ type: 'sine', f0: 1800, f1: 2600, dur: 0.12, vol: 0.12, delay: 0.1 }); noise({ dur: 0.2, vol: 0.2, freq: 1500, q: 0.8 }); },
+  bark() { [0, 0.22].forEach((d) => { tone({ type: 'sawtooth', f0: 260, f1: 180, dur: 0.14, vol: 0.12, delay: d }); noise({ dur: 0.1, vol: 0.12, freq: 700, q: 2, delay: d }); }); },
+  sniff() { [0, 0.12, 0.24].forEach((d) => noise({ dur: 0.07, vol: 0.06, freq: 3000, q: 1, delay: d })); },
+  teleport() { tone({ type: 'sine', f0: 300, f1: 1400, dur: 0.3, vol: 0.12 }); noise({ dur: 0.3, vol: 0.08, freq: 600, f1: 2500, q: 1 }); },
+  pop() { tone({ type: 'square', f0: 200, f1: 600, dur: 0.12, vol: 0.1 }); noise({ dur: 0.2, vol: 0.15, freq: 400, q: 0.7 }); },
+  throw() { noise({ dur: 0.25, vol: 0.1, freq: 800, f1: 2000, q: 1.2 }); },
+  splat() { noise({ dur: 0.18, vol: 0.18, freq: 300, type: 'lowpass' }); tone({ type: 'sine', f0: 160, f1: 80, dur: 0.12, vol: 0.15 }); },
   victory() { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => { tone({ type: 'triangle', f0: f, dur: 0.35, vol: 0.15, delay: i * 0.1 }); tone({ type: 'square', f0: f / 2, dur: 0.2, vol: 0.04, delay: i * 0.1 }); }); },
 };
 
@@ -154,6 +160,7 @@ const TRACKS = {
   salon: { root: 261.63, bpm: 92, pattern: [0, 2, 4, 2, 3, 2, 4, 1], chords: [0, 5, 7, 3], wave: 'triangle', vol: 0.12 },
   kitchen: { root: 293.66, bpm: 116, pattern: [0, 4, 2, 4, 1, 4, 3, 4], chords: [0, 5, 0, 7], wave: 'triangle', vol: 0.11 },
   bath: { root: 329.63, bpm: 100, pattern: [4, 2, 0, 2, 4, 4, 3, 1], chords: [0, 5, 3, 7], wave: 'sine', vol: 0.15 },
+  garden: { root: 349.23, bpm: 104, pattern: [0, 1, 2, 4, 2, 1, 3, 4], chords: [0, 5, 7, 5], wave: 'triangle', vol: 0.12 },
   boss: { root: 220, bpm: 138, pattern: [0, 0, 3, 0, 4, 3, 2, 1], chords: [0, 0, 5, 7], wave: 'square', vol: 0.05 },
 };
 let track = TRACKS.salon;

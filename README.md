@@ -33,8 +33,10 @@ Ekran tuşları dokunmatik cihazlarda otomatik açılır; Ayarlar → "📱 Ekra
 | 🛋️ Salon | Eğitim: tırmanma, minder, kayan tepsi | Kırmızı Pelerin |
 | 🍳 Mutfak | Kırmızı plaka → çekmeceler, tost makinesi, tencere kapağı asansörü, 3 düğme → tabak köprüsü, **boss: Kral Fare** | Aşçı Şapkası (Mama Yağmuru) |
 | 🛁 Banyo | Kaygan köpük, havlu tırmanışı, tuvalet kâğıdı bandı, aralıklı musluk, vana → küvet dolar ve ördekler yükselir, çamaşır tamburu, kapıya kaydırak | Yüzücü Gözlüğü (Yere Basma!) |
-| 🌻 Bahçe · 🌙 Çatı · 🔦 Bodrum | Yapım aşamasında | |
+| 🌻 Bahçe | Çit üstünde denge, süpüren fıskiye, köstebek tüneli, ayçiçeği zıplatıcı, uyuyan köpek (💤 iken geç, 👀 iken dur), sulayınca büyüyen çiçekler → ağaç evi, **boss: Dev Köstebek** | Hasır Şapka (Çit Yarışı) |
+| 🌙 Çatı · 🔦 Bodrum | Yapım aşamasında | |
 
+Dev Köstebek: toprak titreyen tümseğe koş, çıkınca pati at ya da üstüne zıpla; kırmızı halkalara toprak topu düşer.
 Kral Fare: "!" gösterip koşar; kenara kaç, duvara toslasın. Sersemleyince üstüne zıpla (ya da pati at). 3 vuruşta yenilir, çan ortaya çıkar.
 
 ## Yeni oda eklemek
@@ -47,7 +49,11 @@ Diğer alanlar:
 - `movers`: `from`/`to`/`speed`, `wait` (uçlarda bekleme), `u0` (başlangıç konumu 0..1); ya da `orbit: [x,y,z]`, `r`, `speed`, `phase`, `plane: "zy"|"xz"` ile dönme dolap gibi dönen platform.
 - `"conv": [vx, vz]` → taşıma bandı; `"float": "suId", "sink"` → suyla yükselen kutu.
 - `water`: `id`, `g` (grup açılınca yükselir), `rise`, `riseTime`.
-- `zones`: `{ type: "push", p, s, f: [fx,fy,fz], period: [açık, kapalı], vis: "stream" }` → içindekini iter.
+- `zones`: `{ type: "push", p, s, f: [fx,fy,fz], period: [açık, kapalı], vis: "stream"|"spray", sweep: { from, to, speed } }` → içindekini iter (sweep ile gidip gelir).
+- `tunnels`: `[{ a: [x,y,z], b: [x,y,z] }]` → iki delik arasında ışınlanma.
+- `"grow": true` → gruptaki kutu açılınca yerden büyüyerek çıkar.
+- `theme.outdoor` → tavan yok, alçak çit, uzak ağaçlar ve bulutlar; `floorTex: "grass"`.
+- Düşmanlar: `vacuum`, `mouse`, `spider`, `roamer`, `soap`, `dog` (`area`, `sleep`, `pushZ`). Boss: `kingmouse`, `mole` (`holes`, `respawn`).
 - `switches`: `plate` (üstüne bas), `button` ya da `valve` (pati/üstüne zıpla); `targets: [["grup", true]]`, `bulb` ile yanan ampul.
 - `puzzles`: `need` listesindeki tüm anahtarlar basılınca `targets` açılır; görev satırında sayaç gösterir.
 - `steps`: `{ until: "grup", text }` — grup açılana kadar görev satırında gösterilir.

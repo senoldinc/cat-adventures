@@ -285,6 +285,82 @@ export function decorateBox(mesh, look, size, color) {
   } else if (look === 'scale') {
     mesh.material = mat(0xf2f2f2);
     add(mesh, new THREE.BoxGeometry(w * 0.6, 0.04, d * 0.25), mat(0x2b2b2b), 0, h / 2 + 0.01, -d * 0.2);
+  } else if (look === 'hedge') {
+    mesh.material = mat(0x4caf50, { roughness: 1 });
+    const n = Math.max(2, Math.round(w / 1.4));
+    for (let i = 0; i < n; i++) {
+      const b = add(mesh, new THREE.IcosahedronGeometry(Math.min(h, d) * 0.55, 0), mat(i % 2 ? 0x5cbf5f : 0x3f9c4a), -w / 2 + (w / n) * (i + 0.5), h / 2 - 0.1, ((i % 3) - 1) * 0.15);
+      b.scale.set(1.3, 0.8, 1);
+    }
+    for (let i = 0; i < n; i += 2) add(mesh, new THREE.SphereGeometry(0.12, 6, 4), mat([0xff5fa2, 0xffd166, 0xffffff][i % 3]), -w / 2 + (w / n) * (i + 0.7), h * 0.2, d / 2 + 0.05);
+  } else if (look === 'sunflower') {
+    // Sap + büyük çiçek başı (üstüne basılır)
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    add(mesh, new THREE.CylinderGeometry(0.14, 0.18, h, 6), mat(0x4caf50), 0, 0, 0);
+    for (const sgn of [-1, 1]) {
+      const lf = add(mesh, new THREE.SphereGeometry(0.4, 6, 4), mat(0x66c26a), 0.35 * sgn, -h * 0.15 * sgn, 0);
+      lf.scale.set(1, 0.25, 0.6);
+    }
+    const head = new THREE.Group();
+    head.position.y = h / 2 - 0.05;
+    mesh.add(head);
+    const petals = 12;
+    for (let i = 0; i < petals; i++) {
+      const a = (i / petals) * Math.PI * 2;
+      const pt = new THREE.Mesh(new THREE.SphereGeometry(0.28, 6, 4), mat(0xffd23d));
+      pt.scale.set(1, 0.25, 0.5);
+      pt.position.set(Math.cos(a) * w * 0.42, 0, Math.sin(a) * w * 0.42);
+      pt.rotation.y = -a;
+      head.add(pt);
+    }
+    add(head, new THREE.CylinderGeometry(w * 0.32, w * 0.32, 0.12, 14), mat(0x7a4a2a), 0, 0.03, 0);
+  } else if (look === 'birdbath') {
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    const stone = mat(0xd9d2c5);
+    add(mesh, new THREE.CylinderGeometry(w * 0.2, w * 0.3, h - 0.4, 8), stone, 0, -0.2, 0);
+    add(mesh, new THREE.CylinderGeometry(w / 2, w * 0.35, 0.4, 14), stone, 0, h / 2 - 0.2, 0);
+    add(mesh, new THREE.CylinderGeometry(w * 0.42, w * 0.42, 0.05, 14), new THREE.MeshStandardMaterial({ color: 0x8fd3ff, roughness: 0.1 }), 0, h / 2 + 0.01, 0).castShadow = false;
+  } else if (look === 'kennel') {
+    mesh.material = mat(0xe8574a);
+    const roof = add(mesh, new THREE.ConeGeometry(Math.max(w, d) * 0.78, 1.2, 4), mat(0x8a5a32), 0, h / 2 + 0.55, 0);
+    roof.rotation.y = Math.PI / 4;
+    const door = add(mesh, new THREE.CircleGeometry(h * 0.3, 12), new THREE.MeshBasicMaterial({ color: 0x2b1d14 }), 0, -h * 0.15, d / 2 + 0.01);
+    door.castShadow = false;
+    add(mesh, new THREE.BoxGeometry(w * 0.5, 0.3, 0.05), mat(0xfff3e0), 0, h * 0.32, d / 2 + 0.02);
+  } else if (look === 'trunk') {
+    mesh.material = mat(0x8a5a32);
+    for (let i = 0; i < 5; i++) {
+      const top = add(mesh, new THREE.IcosahedronGeometry(2.2 + (i % 2) * 0.6, 0), mat(i % 2 ? 0x5cbf5f : 0x4caf50), Math.cos(i * 1.3) * 2, h / 2 + 2.4 + (i % 3) * 0.8, Math.sin(i * 1.3) * 2);
+      top.castShadow = true;
+    }
+    for (let i = 0; i < 4; i++) add(mesh, new THREE.SphereGeometry(0.22, 6, 4), mat(0xe8443a), Math.cos(i * 1.7) * 2.6, h / 2 + 1.6 + (i % 2), Math.sin(i * 1.7) * 2.6);
+  } else if (look === 'treehouse') {
+    mesh.material = mat(0xc98a55);
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) add(mesh, new THREE.BoxGeometry(0.15, 1.1, 0.15), mat(0x8a5a32), (w / 2 - 0.1) * sx, 0.7, (d / 2 - 0.1) * sz);
+    add(mesh, new THREE.BoxGeometry(w, 0.12, 0.12), mat(0x8a5a32), 0, 1.2, -d / 2 + 0.1);
+    add(mesh, new THREE.BoxGeometry(0.12, 0.12, d), mat(0x8a5a32), w / 2 - 0.1, 1.2, 0);
+    const flag = add(mesh, new THREE.ConeGeometry(0.35, 0.8, 3), mat(0xff5fa2), w / 2 - 0.1, 1.9, -d / 2 + 0.1);
+    flag.rotation.z = -Math.PI / 2;
+  } else if (look === 'beam') {
+    mesh.material = mat(0xc98a55);
+    const n = Math.max(1, Math.floor(d / 1.2));
+    for (let i = 0; i <= n; i++) add(mesh, new THREE.BoxGeometry(0.22, 3.2, 0.22), mat(0xb5814a), 0, -1.75, -d / 2 + (d / n) * i).castShadow = true;
+  } else if (look === 'gardenfence' || look === 'gate') {
+    mesh.material.visible = false;
+    mesh.castShadow = false;
+    const wood = mat(look === 'gate' ? 0x7bc96f : 0xf4ead5);
+    const n = Math.max(2, Math.round(w / 0.6));
+    for (let i = 0; i < n; i++) {
+      const x = -w / 2 + (w / n) * (i + 0.5);
+      add(mesh, new THREE.BoxGeometry(w / n - 0.12, h - 0.3, 0.14), wood, x, -0.15, 0);
+      add(mesh, new THREE.ConeGeometry((w / n) * 0.42, 0.4, 4), wood, x, h / 2 - 0.1, 0).rotation.y = Math.PI / 4;
+    }
+    for (const y of [-h * 0.25, h * 0.2]) add(mesh, new THREE.BoxGeometry(w, 0.18, 0.18), wood, 0, y, 0.12);
+  } else if (look === 'stone') {
+    mesh.material = mat(0xcfc6b8);
+    for (let i = 0; i < 6; i++) add(mesh, new THREE.BoxGeometry(w / 3 - 0.08, 0.04, d / 2 - 0.08), mat(i % 2 ? 0xd9d2c5 : 0xc2b8a8), -w / 3 + (i % 3) * (w / 3), h / 2 + 0.01, (Math.floor(i / 3) - 0.5) * (d / 2)).castShadow = false;
   } else if (look === 'wallshelf') {
     for (const s of [-1, 1]) {
       const br = add(mesh, new THREE.BoxGeometry(0.15, 0.8, 0.8), mat(0x8a5a32), (w / 3) * s, -0.5, d / 2 - 0.4);
@@ -439,6 +515,69 @@ export function buildProp(spec) {
       });
       break;
     }
+    case 'butterfly': {
+      // Daire çizerek uçan kelebek (Level.flyers ile hareket eder)
+      add(g, new THREE.CylinderGeometry(0.03, 0.03, 0.25, 4), mat(0x333333), 0, 0, 0).rotation.x = Math.PI / 2;
+      for (const sgn of [-1, 1]) {
+        const wing = new THREE.Mesh(new THREE.CircleGeometry(0.2, 8), new THREE.MeshStandardMaterial({ color: spec.c || 0xff9db8, side: THREE.DoubleSide }));
+        wing.geometry.translate(0.18 * sgn, 0, 0);
+        wing.rotation.x = -Math.PI / 2;
+        const holder = new THREE.Group();
+        holder.add(wing);
+        g.add(holder);
+      }
+      g.userData.fly = { c: spec.p, r: spec.r || 2, speed: spec.speed || 0.8, phase: spec.phase || 0 };
+      break;
+    }
+    case 'sprinkler': {
+      add(g, new THREE.CylinderGeometry(0.3, 0.4, 0.3, 8), mat(0x5ab0e8), 0, 0.15, 0);
+      add(g, new THREE.CylinderGeometry(0.06, 0.06, 1, 6), mat(0xc0c0c0, { metalness: 0.6 }), 0, 0.8, 0);
+      const head = new THREE.Group();
+      head.position.y = 1.3;
+      add(head, new THREE.BoxGeometry(0.9, 0.1, 0.1), mat(0xffd166), 0, 0, 0);
+      add(head, new THREE.SphereGeometry(0.12, 6, 4), mat(0xff6b6b), 0, 0.05, 0);
+      g.add(head);
+      g.userData.spin = head;
+      break;
+    }
+    case 'wateringcan': {
+      const green = mat(0x5cc96b, { metalness: 0.3, roughness: 0.4 });
+      add(g, new THREE.CylinderGeometry(0.45, 0.5, 0.8, 12), green, 0, 0.4, 0);
+      const spout = add(g, new THREE.CylinderGeometry(0.06, 0.1, 1, 6), green, 0.55, 0.75, 0);
+      spout.rotation.z = -0.9;
+      add(g, new THREE.TorusGeometry(0.3, 0.06, 5, 10, Math.PI), green, -0.1, 0.85, 0);
+      break;
+    }
+    case 'flowers': {
+      const cols = [0xff5fa2, 0xffd166, 0xb56fd6, 0xffffff, 0xff9f3d];
+      for (let i = 0; i < (spec.n || 7); i++) {
+        const x = ((i * 0.618) % 1 - 0.5) * (spec.w || 3), z = ((i * 0.37 + 0.2) % 1 - 0.5) * (spec.d || 1.5);
+        add(g, new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4), mat(0x4caf50), x, 0.3, z);
+        add(g, new THREE.SphereGeometry(0.14, 6, 4), mat(cols[i % cols.length]), x, 0.62, z);
+      }
+      break;
+    }
+    case 'veggies': {
+      for (let i = 0; i < (spec.n || 6); i++) {
+        const x = (i - (spec.n || 6) / 2) * 1.1;
+        if (i % 2) {
+          add(g, new THREE.SphereGeometry(0.4, 8, 6), mat(0x8fd36b), x, 0.3, 0).scale.y = 0.8;
+        } else {
+          const c = add(g, new THREE.ConeGeometry(0.15, 0.5, 6), mat(0xff8a3d), x, 0.15, 0);
+          c.rotation.x = Math.PI;
+          add(g, new THREE.ConeGeometry(0.12, 0.35, 4), mat(0x4caf50), x, 0.55, 0);
+        }
+      }
+      break;
+    }
+    case 'scarecrow': {
+      add(g, new THREE.CylinderGeometry(0.08, 0.08, 3, 6), mat(0x8a5a32), 0, 1.5, 0);
+      add(g, new THREE.BoxGeometry(2, 0.12, 0.12), mat(0x8a5a32), 0, 2.2, 0);
+      add(g, new THREE.BoxGeometry(1, 1, 0.5), mat(0x5ab0e8), 0, 2, 0);
+      add(g, new THREE.SphereGeometry(0.38, 8, 6), mat(0xf4dca0), 0, 2.85, 0);
+      add(g, new THREE.ConeGeometry(0.6, 0.5, 10), mat(0xe8c048), 0, 3.25, 0);
+      break;
+    }
     case 'clock': {
       add(g, new THREE.CylinderGeometry(0.9, 0.9, 0.12, 16), mat(0xffffff), 0, 0, 0).rotation.x = Math.PI / 2;
       add(g, new THREE.TorusGeometry(0.9, 0.08, 6, 16), mat(0xe8574a), 0, 0, 0.02);
@@ -515,6 +654,46 @@ export function tileTexture(base, grout) {
   for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) x.fillRect(i * 32 + 4, j * 32 + 4, 8, 3);
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// Çim (açık hava zemini)
+export function grassTexture(base, blade) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const x = c.getContext('2d');
+  x.fillStyle = base;
+  x.fillRect(0, 0, 128, 128);
+  let seed = 3;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  x.strokeStyle = blade;
+  x.lineWidth = 2;
+  for (let i = 0; i < 90; i++) {
+    const px = rnd() * 128, py = rnd() * 128;
+    x.beginPath(); x.moveTo(px, py); x.lineTo(px + (rnd() - 0.5) * 4, py - 5 - rnd() * 4); x.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+// Sivri uçlu tahta çit (aralıklar saydam)
+export function fenceTexture(wood, line, length) {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 128;
+  const x = c.getContext('2d');
+  x.clearRect(0, 0, 64, 128);
+  x.fillStyle = wood;
+  x.beginPath(); x.moveTo(8, 128); x.lineTo(8, 20); x.lineTo(28, 2); x.lineTo(48, 20); x.lineTo(48, 128); x.fill();
+  x.fillRect(0, 50, 64, 12);
+  x.fillRect(0, 98, 64, 12);
+  x.strokeStyle = line; x.lineWidth = 2;
+  x.strokeRect(9, 21, 38, 106);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = THREE.RepeatWrapping;
+  t.repeat.set(length / 1.1, 1);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }

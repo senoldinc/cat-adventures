@@ -180,6 +180,33 @@ export function alertSprite() {
   return sp;
 }
 
+// Genel konuşma balonu (emoji/yazı). Aynı metin için doku paylaşılır.
+const bubbleTex = new Map();
+export function bubbleSprite(text, bg = '#ffffff', scale = 0.7) {
+  const key = text + bg;
+  if (!bubbleTex.has(key)) {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 96;
+    const x = c.getContext('2d');
+    x.fillStyle = bg;
+    x.beginPath(); x.ellipse(64, 42, 58, 38, 0, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.moveTo(52, 74); x.lineTo(64, 94); x.lineTo(72, 72); x.fill();
+    x.strokeStyle = 'rgba(74,52,38,0.35)'; x.lineWidth = 3;
+    x.beginPath(); x.ellipse(64, 42, 58, 38, 0, 0, Math.PI * 2); x.stroke();
+    x.fillStyle = '#4a3426';
+    x.font = 'bold 44px "Apple Color Emoji","Segoe UI Emoji",sans-serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(text, 64, 44);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    bubbleTex.set(key, t);
+  }
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: bubbleTex.get(key), depthTest: false }));
+  sp.scale.set(scale * 1.33, scale, 1);
+  sp.renderOrder = 5;
+  return sp;
+}
+
 // Sersemleme yıldızları
 export function dizzyStars() {
   const g = new THREE.Group();
@@ -389,7 +416,121 @@ class Soap extends Enemy {
   }
 }
 
+// Uyuyan köpek Boncuk: uyur (Zzz) → kıpırdar (❓) → bakar (👀). Bakarken bahçesinde koşan/zıplayan
+// kediye havlar ve onu geri iter. Can yakmaz, yenilmez.
+class Dog extends Enemy {
+  constructor(scene, spec, world) {
+    super(scene, spec);
+    this.passive = true;
+    this.hw = 1.2; this.h = 1.3;
+    const fur = mat(0xe8c48a), dark = mat(0xa8723a), white = mat(0xfff3e0);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 8), fur);
+    body.scale.set(0.8, 0.55, 1.35);
+    body.position.y = 0.5;
+    this.model.add(body);
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 6), white);
+    belly.scale.set(0.75, 0.4, 1.1);
+    belly.position.set(0, 0.35, 0.1);
+    this.model.add(belly);
+    this.head = new THREE.Group();
+    this.head.position.set(0, 0.55, 1.15);
+    this.model.add(this.head);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 8), fur);
+    this.head.add(skull);
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 6), white);
+    snout.scale.set(1, 0.75, 1);
+    snout.position.set(0, -0.12, 0.45);
+    this.head.add(snout);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), mat(0x2b1d14));
+    nose.position.set(0, -0.02, 0.72);
+    this.head.add(nose);
+    this.ears = [];
+    for (const s of [-1, 1]) {
+      const ear = new THREE.Group();
+      ear.position.set(0.42 * s, 0.25, 0);
+      const flap = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), dark);
+      flap.scale.set(0.45, 1.1, 0.8);
+      flap.position.y = -0.25;
+      ear.add(flap);
+      ear.rotation.z = 0.3 * s;
+      this.head.add(ear);
+      this.ears.push(ear);
+    }
+    // Açık gözler ve kapalı göz çizgileri
+    this.openEyes = new THREE.Group();
+    this.closedEyes = new THREE.Group();
+    for (const s of [-1, 1]) {
+      eye(this.openEyes, 0.2 * s, 0.12, 0.42);
+      const lid = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.035, 0.03), mat(0x2b1d14));
+      lid.position.set(0.2 * s, 0.1, 0.5);
+      this.closedEyes.add(lid);
+    }
+    this.head.add(this.openEyes, this.closedEyes);
+    for (const [x, z] of [[-0.45, 0.85], [0.45, 0.85], [-0.45, -0.8], [0.45, -0.8]]) {
+      const paw = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), white);
+      paw.scale.set(1, 0.6, 1.4);
+      paw.position.set(x, 0.1, z);
+      this.model.add(paw);
+    }
+    this.tail = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.1, 0.7, 6), fur);
+    this.tail.geometry.translate(0, 0.35, 0);
+    this.tail.position.set(0, 0.6, -1.15);
+    this.tail.rotation.x = -1.1;
+    this.model.add(this.tail);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.06, 6, 14), mat(0xe8443a));
+    collar.position.set(0, 0.5, 0.75);
+    collar.rotation.x = 1.3;
+    this.model.add(collar);
+
+    this.bubbles = { sleep: bubbleSprite('💤'), stir: bubbleSprite('❓', '#fff6c8'), look: bubbleSprite('👀', '#ffe1ec') };
+    for (const b of Object.values(this.bubbles)) { b.position.set(0.6, 2.0, 1.0); b.visible = false; this.g.add(b); }
+
+    this.pos.set(...spec.p);
+    this.g.rotation.y = spec.yaw || 0;
+    const [x0, z0, x1, z1] = spec.area;
+    this.area = { x0, z0, x1, z1 };
+    this.state = 'sleep';
+    this.stateT = spec.sleep || 4;
+    this.box = world.add({ minX: this.pos.x - 0.8, maxX: this.pos.x + 0.8, minY: 0, maxY: 1.0, minZ: this.pos.z - 1.4, maxZ: this.pos.z + 1.6, kind: 'dog' });
+    this.finish();
+  }
+  get harmful() { return false; }
+  onPaw() { return null; }
+  get watching() { return this.state === 'look' && this.lookT > 0.25; }
+  inArea(p) { const a = this.area; return p.x > a.x0 && p.x < a.x1 && p.z > a.z0 && p.z < a.z1 && p.y < 2; }
+  enter(s, t) { this.state = s; this.stateT = t; this.lookT = 0; }
+  // Havladıktan sonra hemen uykuya döner (art arda havlamaz)
+  barked() { this.enter('sleep', this.sleepTime); this.barkT = 0.6; }
+  update(dt, speedK) {
+    this.t += dt;
+    this.stateT -= dt;
+    this.lookT += dt;
+    const helper = speedK < 1;
+    this.sleepTime = helper ? 6 : (this.spec.sleep || 4);
+    if (this.stateT <= 0) {
+      if (this.state === 'sleep') { this.enter('stir', 0.8); this.events?.stir?.(); }
+      else if (this.state === 'stir') this.enter('look', helper ? 1.0 : 1.6);
+      else this.enter('sleep', this.sleepTime);
+    }
+    const awake = this.state !== 'sleep';
+    this.openEyes.visible = this.state === 'look';
+    this.closedEyes.visible = !this.openEyes.visible;
+    for (const [k, b] of Object.entries(this.bubbles)) b.visible = k === this.state;
+    this.bubbles.sleep.position.y = 2.0 + Math.sin(this.t * 2) * 0.1;
+    const headUp = this.state === 'look' ? 0.4 : this.state === 'stir' ? 0.15 : -0.1;
+    this.head.position.y += (0.55 + headUp - this.head.position.y) * Math.min(1, dt * 8);
+    this.head.rotation.y = this.state === 'look' ? Math.sin(this.t * 1.5) * 0.4 : 0;
+    this.ears[0].rotation.z = this.state === 'stir' ? -0.9 : -0.3;
+    this.ears[1].rotation.z = this.state === 'look' ? 0.9 : 0.3;
+    this.model.scale.y = 1 + (this.state === 'sleep' ? Math.sin(this.t * 2) * 0.03 : 0);
+    this.barkT = Math.max(0, (this.barkT || 0) - dt);
+    this.head.position.z = 1.15 + (this.barkT > 0 ? Math.sin(this.barkT * 30) * 0.1 : 0);
+    this.tail.rotation.z = awake ? Math.sin(this.t * 12) * 0.5 : 0;
+  }
+}
+
 export function createEnemy(scene, spec, world) {
+  if (spec.type === 'dog') return new Dog(scene, spec, world);
   if (spec.type === 'soap') return new Soap(scene, spec);
   if (spec.type === 'roamer') return new Roamer(scene, spec, world);
   if (spec.type === 'vacuum') return new Vacuum(scene, spec);

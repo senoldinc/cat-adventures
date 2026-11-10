@@ -289,6 +289,15 @@ export function buildAccessory(id) {
       }
       break;
     }
+    case 'hat_straw': {
+      const straw = mat(0xe8c86a);
+      g.add(mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.025, 16), straw, 0, 0.02, 0));
+      g.add(mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.13, 12), straw, 0, 0.09, 0));
+      g.add(mesh(new THREE.CylinderGeometry(0.152, 0.152, 0.04, 12), mat(0xff5fa2), 0, 0.05, 0));
+      g.add(mesh(ico(0.04, 0), mat(0xffd166), 0.13, 0.07, 0.08));
+      g.rotation.z = 0.1;
+      break;
+    }
     case 'hat_chef': {
       const white = mat(0xffffff);
       g.add(mesh(new THREE.CylinderGeometry(0.13, 0.14, 0.14, 12), white, 0, 0.06, 0));
